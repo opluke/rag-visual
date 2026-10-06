@@ -292,6 +292,35 @@ header.hero{background:var(--band);box-shadow:0 0 0 100vmax var(--band);clip-pat
 footer{background:var(--band);box-shadow:0 0 0 100vmax var(--band);clip-path:inset(0 -100vmax);color:var(--band-muted);border:none;padding-block:32px;display:flex;flex-direction:column;gap:6px}
 footer b{color:var(--band-fg);font-family:var(--f-display);font-size:1.1rem}
 @media (max-width:860px){.hero-grid{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:520px}}
+
+/* ===== phone layout (v6) ===== */
+.trade .sv{display:none}
+.swipe{display:none}
+@media (max-width:600px){
+  .wrap>section{padding-block:44px}
+  .fig{padding:12px}
+  .panel{padding:16px}
+  .fig.scroll svg{min-width:0}
+  .wide-swim{min-width:820px}
+  .swipe{display:block;margin:0;font-size:.8rem;color:var(--muted);text-align:center}
+  .hit{grid-template-columns:auto minmax(0,1fr);gap:4px 10px}
+  .hit .sc{grid-column:2;text-align:left;min-width:0}
+  .chip{font-size:.85rem;padding:5px 10px}
+  table.trade{min-width:0;font-size:.82rem}
+  .trade td:first-child{white-space:normal}
+  .trade th:last-child,.trade td:last-child{display:none}
+  .trade .sv{display:block;font-weight:400;font-size:.74rem;color:var(--muted);margin-top:2px}
+  .trade th,.trade td{padding:8px 5px}
+  .trade th{letter-spacing:0}
+  .evtext{font-size:1.1rem}
+  .hero h1 .en{letter-spacing:.18em}
+  .hero .def{font-size:1.12rem}
+  .cta .btn{flex:1 1 auto;justify-content:center}
+  .toc a{padding:4px 8px;font-size:.84rem}
+  .detail{padding:14px}
+  .bridge{font-size:.86rem}
+  h2{font-size:1.7rem}
+}
 </style>
 </head>
 <body>
@@ -415,6 +444,7 @@ footer b{color:var(--band-fg);font-family:var(--f-display);font-size:1.1rem}
     <h2 id="retr-h">同一個問題，三種排名方式</h2>
     <p class="lede">BM25 是傳統關鍵字檢索，看詞組出現次數與稀有程度；字元 TF-IDF 餘弦是上方示範用的方法；RRF（倒數排名融合）把兩份排名合併，每份名次 r 貢獻 1/(60＋r)。兩種方法都只看字面，所以沒有共同字的同義詞仍會漏檢，這是密集 embedding 要補的部分。下圖跟著上方示範的問題與「查詢改寫」設定即時更新，綠線是這題真正需要的證據。</p>
   </div>
+  <p class="swipe">← 左右滑動看完整圖 →</p>
   <div class="fig scroll"><div id="fig-bump" style="min-width:560px"></div></div>
   <div class="two">
     <div class="sub">
@@ -436,6 +466,7 @@ footer b{color:var(--band-fg);font-family:var(--f-display);font-size:1.1rem}
     <h2 id="var-h">從單次檢索到會修訂的代理記憶</h2>
   </div>
   <div class="vgrid" id="vgrid"></div>
+  <p class="swipe">← 表格可左右滑動 →</p>
   <div class="tbl">
     <table>
       <thead><tr><th>做法</th><th>核心想法</th><th>何時檢索</th><th>資料更新時</th><th>主要風險</th></tr></thead>
@@ -477,7 +508,8 @@ footer b{color:var(--band-fg);font-family:var(--f-display);font-size:1.1rem}
     </div>
     <div class="evcard" id="mev" aria-live="polite"></div>
   </div>
-  <div class="fig scroll"><div id="fig-swim"></div></div>
+  <p class="swipe">← 左右滑動看完整圖 →</p>
+  <div class="fig scroll"><div id="fig-swim" class="wide-swim"></div></div>
   <div class="two">
     <div class="sub"><h3>此刻去問代理</h3><p class="note">答案只依截至這一輪的有效記憶。往回拖動滑桿，就能看到「當時」代理會怎麼回答。</p><div class="asof" id="asof"></div></div>
     <div class="sub"><h3>記憶數量怎麼成長</h3><p class="note">原始訊息每輪都增加；整合後的有效記憶成長較慢，更新與撤回不會讓它變多。版本總數則保留了變更歷史。</p><div class="fig"><div id="fig-growth"></div></div></div>
@@ -488,7 +520,7 @@ footer b{color:var(--band-fg);font-family:var(--f-display);font-size:1.1rem}
 
   <div class="sub"><h3>支持關係：撤回一則證據，哪些記憶要跟著失效？</h3><p class="note">推導出的記憶要記住自己靠哪些證據成立。「或」表示任一組支持就成立，「且」表示全部都要成立。點左邊的證據把它撤回，看影響怎麼傳遞。這個想法源自真值維護系統（TMS）。</p></div>
   <div class="two">
-    <div class="fig scroll"><div id="fig-support" style="min-width:560px"></div></div>
+    <div class="fig scroll"><p class="swipe">← 左右滑動看完整圖 →</p><div id="fig-support" style="min-width:640px"></div></div>
     <div class="panel"><p class="label">目前的推理</p><ul id="sup-why"></ul><button class="try" id="sup-reset">全部恢復</button></div>
   </div>
 
@@ -534,7 +566,7 @@ footer b{color:var(--band-fg);font-family:var(--f-display);font-size:1.1rem}
   </div>
   <div class="tbl">
     <table class="trade">
-      <thead><tr><th>調整</th><th>召回</th><th>精準</th><th>提示長度與成本</th><th>延遲</th><th>常見起始值</th></tr></thead>
+      <thead><tr><th>調整</th><th>召回</th><th>精準</th><th>成本</th><th>延遲</th><th>常見起始值</th></tr></thead>
       <tbody id="trade"></tbody>
     </table>
   </div>
@@ -577,6 +609,7 @@ const DV=TF.map(vec);
 function cos(a,b){let s=0;for(const k in a)if(b[k])s+=a[k]*b[k];return s;}
 
 const $=id=>document.getElementById(id);
+const NAR=()=>{try{return matchMedia('(max-width:600px)').matches}catch(e){return false}};
 let current='q1';
 
 function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -759,20 +792,20 @@ function drawPlot(qv,sel){
  const pts=mds(DV.concat([qv]));
  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
  const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
- const W=420,H=260,P=28;const sx=x=>P+(x-minx)/((maxx-minx)||1)*(W-2*P);const sy=y=>P+(y-miny)/((maxy-miny)||1)*(H-2*P);
+ const W=NAR()?330:420,H=NAR()?250:260,P=NAR()?22:28;const sx=x=>P+(x-minx)/((maxx-minx)||1)*(W-2*P);const sy=y=>P+(y-miny)/((maxy-miny)||1)*(H-2*P);
  const q=pts[pts.length-1];let s=`<rect class="bg" x="0" y="0" width="${W}" height="${H}" rx="8"/>`;
  DOCS.forEach((d,i)=>{if(sel.has(d.id))s+=`<line class="ln" style="stroke:var(--mark)" x1="${sx(q[0])}" y1="${sy(q[1])}" x2="${sx(pts[i][0])}" y2="${sy(pts[i][1])}"/>`;});
  DOCS.forEach((d,i)=>{const on=sel.has(d.id);const x=sx(pts[i][0]),y=sy(pts[i][1]);
   s+=`<circle class="dot${on?' on':''}" cx="${x}" cy="${y}" r="${on?7:5}"><title>${d.id}：${esc(d.text)}</title></circle>`;
   s+=`<text x="${x+9}" y="${y+4}" class="tm" style="${on?'fill:var(--ink)':''}">${d.id}</text>`;});
  s+=`<text x="${sx(q[0])}" y="${sy(q[1])+7}" text-anchor="middle" style="font-size:20px;fill:var(--warn)">★</text>`;
- $('plot').innerHTML=s;}
+ $('plot').innerHTML=s;$('plot').setAttribute('viewBox','0 0 '+W+' '+H);}
 
 // ---------- evaluation ----------
 const REL={q1:['m3','m11'],q2:['m5'],q3:['m7','m8'],q4:['m2']};
 function drawEval(scored,k){
  const rel=REL[current];
- const W=520,cw=44,x0=14;let s='';
+ const cw=NAR()?28:44,x0=NAR()?6:14,W=NAR()?x0*2+11*cw:520;let s='';
  if(!rel||$('q').value.trim()!==(PRESETS.find(p=>p.id===current)||{}).q){
   $('fig-rank').innerHTML=SV(W,110,TX(W/2,55,'自訂問題沒有標準答案，無法計算。請選一個預設問題。','ts'),'無法評估');
   $('fig-curve').innerHTML='';$('ev-r').textContent='–';$('ev-m').textContent='–';return;}
@@ -780,7 +813,7 @@ function drawEval(scored,k){
   s+=`<rect class="cell${r?' rel':''}" x="${x}" y="30" width="${cw-4}" height="40" rx="4"/>`;
   s+=`<text x="${x+cw/2-2}" y="50" class="tm" text-anchor="middle" dominant-baseline="middle" style="${r?'fill:var(--good);font-weight:600':''}">${h.d.id}</text>`;
   s+=`<text x="${x+cw/2-2}" y="18" class="ts" text-anchor="middle">${i+1}</text>`;});
- const kx=x0+k*cw-2;s+=`<line class="kline" x1="${kx}" y1="8" x2="${kx}" y2="92"/>`+TX(kx+4,100,`k = ${k}　← 交付　｜　未交付 →`,'tl','middle');
+ const kx=x0+k*cw-2;s+=`<line class="kline" x1="${kx}" y1="8" x2="${kx}" y2="92"/>`+TX(kx+4,100,(NAR()?`k = ${k}`:`k = ${k}　← 交付　｜　未交付 →`),'tl','middle');
  $('fig-rank').innerHTML=SV(W,112,s,'依相似度排名的 11 則記憶與 k 截斷線');
  const rec=kk=>scored.slice(0,kk).filter(h=>rel.includes(h.d.id)).length/rel.length;
  const first=scored.findIndex(h=>rel.includes(h.d.id))+1;
@@ -799,7 +832,7 @@ function drawEval(scored,k){
 
 // ---------- chunk strip ----------
 function drawChunkStrip(out,ch){
- const W=1000,L=40,R=10,top=26,rh=14;const n=out.length;const H=top+n*rh+20;const sx=c=>L+c/ch.length*(W-L-R);let s='';
+ const W=NAR()?340:1000,L=NAR()?30:40,R=10,top=26,rh=14;const n=out.length;const H=top+n*rh+20;const sx=c=>L+c/ch.length*(W-L-R);let s='';
  const ends=[];ch.forEach((c,i)=>{if(c==='。')ends.push(i+1);});
  ends.forEach(e=>{s+=`<line class="sent" x1="${sx(e)}" y1="${top-8}" x2="${sx(e)}" y2="${H-14}"/>`;});
  s+=TX(L,10,'原文位置 →','ts','start')+TX(W-R,10,ch.length+' 字','tm','end');
@@ -831,25 +864,26 @@ const STEPS={
  on5:{t:'組裝提示',w:'把系統指令、編號後的片段與問題組成提示。',p:'片段順序、是否附日期與來源、上下文長度上限。',r:'超過上下文長度會被截斷；放在中間的內容較容易被忽略。'},
  on6:{t:'LLM 生成',w:'語言模型依提示作答，要求只使用片段內容並標註引用編號。',p:'模型、溫度、輸出格式。',r:'模型仍可能補出片段裡沒有的內容（幻覺）。'},
  on7:{t:'附引用回答',w:'回答中每個主張都標上片段編號，讀者可以點回原文查核。',p:'引用格式、是否顯示原文摘錄。',r:'引用存在不代表真的支持該句，需要評估引用支持度。'}};
-function showStep(id){const s=STEPS[id];if(!s)return;
+let PSEL='on3';
+function showStep(id){const s=STEPS[id];if(!s)return;PSEL=id;
  document.querySelectorAll('#fig-pipe [data-step]').forEach(g=>g.classList.toggle('sel',g.dataset.step===id));
  $('pipe-detail').innerHTML=`<h3>${s.t}</h3><dl><dt>做什麼</dt><dd>${s.w}</dd><dt>要決定的參數</dt><dd>${s.p}</dd><dt>常見問題</dt><dd>${s.r}</dd></dl>`;}
 
 // ---- prompt composition bar ----
 function drawPBar(){const p=$('prompt').textContent;const i1=p.indexOf('記憶：'),i2=p.indexOf('\n\n問題：');
  const sys=[...p.slice(0,i1)].length,mem=[...p.slice(i1,i2)].length,q=[...p.slice(i2)].length;const tot=sys+mem+q;const BUD=400;
- const W=420,L=0,scale=(W-10)/Math.max(BUD,tot);let s='',x=L;
+ const W=NAR()?340:420,L=0,scale=(W-10)/Math.max(BUD,tot);let s='',x=L;
  [[sys,'var(--muted)','指令'],[mem,'var(--accent)','記憶片段'],[q,'var(--warn)','問題']].forEach(([v,c,n])=>{s+=`<rect x="${x}" y="8" width="${v*scale}" height="22" style="fill:${c};opacity:.85"/>`;x+=v*scale;});
  s+=`<line class="kline" x1="${BUD*scale}" y1="2" x2="${BUD*scale}" y2="36"/>`+TX(BUD*scale-4,46,'示範上限 400 字','ts','end');
- s+=TX(0,46,`指令 ${sys}　記憶 ${mem}　問題 ${q}　共 ${tot} 字`,'tm','start');
- $('fig-pbar').innerHTML=SV(W,54,s,'提示組成長度');}
+ s+=TX(0,NAR()?62:46,`指令 ${sys}　記憶 ${mem}　問題 ${q}　共 ${tot} 字`,'tm','start');
+ $('fig-pbar').innerHTML=SV(W,NAR()?70:54,s,'提示組成長度');}
 
 // ---- embedding: butterfly + gauge ----
 function drawEmbed(){const a=$('ea').value,b=$('eb').value;const ta=toks(a),tb=toks(b);const va=vec(ta),vb=vec(tb);const c=cos(va,vb);
  $('ecos').textContent=c.toFixed(3);$('ebar').style.width=(c*100).toFixed(1)+'%';
  const keys=[...new Set(Object.keys(va).concat(Object.keys(vb)))].filter(k=>k.startsWith('b:'));
  keys.sort((x,y)=>Math.max(va[y]||0,vb[y]||0)*(va[y]&&vb[y]?2:1)-Math.max(va[x]||0,vb[x]||0)*(va[x]&&vb[x]?2:1));
- const rows=keys.slice(0,14);const W=520,mid=W/2,rh=22,top=30,half=mid-46;let s='';
+ const rows=keys.slice(0,14);const W=NAR()?340:520,mid=W/2,rh=22,top=30,half=mid-46;let s='';
  s+=TX(mid-46,12,'← 句子 A 的權重','ts','end')+TX(mid+46,12,'句子 B 的權重 →','ts','start');
  rows.forEach((k,i)=>{const y=top+i*rh;const wa=(va[k]||0),wb=(vb[k]||0);const sh=wa&&wb;
   s+=`<rect x="${mid-40-wa*half}" y="${y}" width="${wa*half}" height="${rh-6}" rx="2" style="fill:${sh?'var(--mark)':'var(--accent)'};opacity:${sh?1:.55}"/>`;
@@ -858,14 +892,14 @@ function drawEmbed(){const a=$('ea').value,b=$('eb').value;const ta=toks(a),tb=t
  if(!rows.length)s+=TX(mid,60,'輸入兩個句子','ts');
  $('fig-butterfly').innerHTML=SV(W,top+Math.max(rows.length,2)*rh+6,s,'兩個句子的二元組權重比較');}
 
-function drawSparseDense(){const V=Object.keys(DF).length;const n=48,cw=10;let s='';
- s+=TX(0,10,`稀疏向量（本頁示範）：維度＝詞彙數 ${V}，絕大多數為 0`,'ts','start');
+function drawSparseDense(){const V=Object.keys(DF).length;const nr=NAR(),n=nr?30:48,cw=10;let s='';
+ s+=TX(0,10,nr?`稀疏向量：維度＝詞彙數 ${V}，大多為 0`:`稀疏向量（本頁示範）：維度＝詞彙數 ${V}，絕大多數為 0`,'ts','start');
  const nz=new Set([3,11,12,27,40]);for(let i=0;i<n;i++)s+=`<rect x="${i*cw}" y="18" width="${cw-2}" height="18" rx="2" style="fill:${nz.has(i)?'var(--accent)':'var(--paper)'};stroke:var(--line)"/>`;
  s+=TX(n*cw+6,27,'…','ts','start');
- s+=TX(0,58,'密集向量（神經網路 embedding）：常見 384～3072 維，每一維都有值','ts','start');
+ s+=TX(0,58,nr?'密集向量：常見 384～3072 維，每維都有值':'密集向量（神經網路 embedding）：常見 384～3072 維，每一維都有值','ts','start');
  for(let i=0;i<n;i++){const v=(Math.sin(i*2.3)+1)/2;s+=`<rect x="${i*cw}" y="66" width="${cw-2}" height="18" rx="2" style="fill:var(--accent);opacity:${(0.15+0.85*v).toFixed(2)}"/>`;}
  s+=TX(n*cw+6,75,'…','ts','start');
- $('fig-sd').innerHTML=SV(520,92,s,'稀疏與密集向量比較示意');}
+ $('fig-sd').innerHTML=SV(nr?330:520,92,s,'稀疏與密集向量比較示意');}
 
 function drawHeat(){const n=DOCS.length,cs=30,L=40,T=30;let s='';
  DOCS.forEach((d,i)=>{s+=TX(L+i*cs+cs/2,T-10,d.id,'tm');s+=TX(L-6,T+i*cs+cs/2,d.id,'tm','end');});
@@ -895,10 +929,10 @@ function drawMethods(qfull,k){const qt=toks(qfull),qv=vec(qt);const bm=bm25(qt);
  $('fig-bump').innerHTML=SV(W,T+N*rh+6,s,'三種檢索方法的排名比較');}
 
 // ---- rerank slope ----
-function drawRerank(scored){const top=scored.filter(h=>h.s>0).slice(0,6);let s='';const W=520,T=36,rh=34,xl=120,xr=400;
+function drawRerank(scored){const top=scored.filter(h=>h.s>0).slice(0,6);let s='';const W=NAR()?340:520,T=36,rh=34,xl=NAR()?60:120,xr=NAR()?320:400;
  if(!top.length){$('fig-rerank').innerHTML=SV(W,60,TX(W/2,30,'沒有相似度大於 0 的片段','ts'),'重排序');return;}
  const rec=h=>(DAYN(h.d.date)-DMIN)/(DMAX-DMIN);const after=top.map(h=>({h,ns:h.s*(1+0.6*rec(h))})).sort((a,b)=>b.ns-a.ns);
- s+=TX(xl,14,'原始相似度排名','tl')+TX(xr,14,'加入新近度之後','tl');
+ s+=TX(NAR()?xl+56:xl,14,'原始相似度排名','tl')+TX(NAR()?xr-56:xr,14,'加入新近度之後','tl');
  top.forEach((h,i)=>{const j=after.findIndex(a=>a.h===h);const y1=T+i*rh,y2=T+j*rh;const up=j<i,dn=j>i;
   s+=`<line x1="${xl+56}" y1="${y1}" x2="${xr-56}" y2="${y2}" style="stroke:${up?'var(--good)':dn?'var(--bad)':'var(--muted)'};stroke-width:2"/>`;
   s+=`<circle class="dot on" cx="${xl+56}" cy="${y1}" r="4"/><circle class="dot ${up?'good':dn?'bad':'on'}" cx="${xr-56}" cy="${y2}" r="4"/>`;
@@ -907,16 +941,16 @@ function drawRerank(scored){const top=scored.filter(h=>h.s>0).slice(0,6);let s='
  $('fig-rerank').innerHTML=SV(W,T+top.length*rh,s,'重排序前後的名次變化');}
 
 // ---- HNSW schematic ----
-function drawHNSW(){const W=640,layers=[{y:20,n:[[.1,.3],[.5,.75],[.85,.4]],lab:'第 2 層：少數節點、長距離跳躍'},
+function drawHNSW(){const nr=NAR(),W=nr?340:640,layers=[{y:20,n:[[.1,.3],[.5,.75],[.85,.4]],lab:'第 2 層：少數節點、長距離跳躍'},
  {y:120,n:[[.85,.4],[.7,.55],[.3,.2],[.2,.8],[.5,.35],[.95,.8],[.45,.85]],lab:'第 1 層'},
  {y:220,n:[[.7,.55],[.76,.62],[.85,.4],[.3,.2],[.2,.8],[.5,.35],[.95,.8],[.45,.85],[.12,.5],[.62,.15],[.35,.6],[.9,.15],[.58,.9],[.05,.15],[.82,.75],[.68,.3]],lab:'第 0 層：全部節點'}];
- const P=(L,x,y)=>[40+x*380+(1-y)*70,L.y+y*70];let s='',path=[];
+ const P=nr?(L,x,y)=>[14+x*262+(1-y)*50,L.y+y*70]:(L,x,y)=>[40+x*380+(1-y)*70,L.y+y*70];let s='',path=[];
  layers.forEach(L=>{const a=P(L,0,0),b=P(L,1,0),c=P(L,1,1),d=P(L,0,1);
   s+=`<polygon points="${[a,b,c,d].map(p=>p.join(',')).join(' ')}" style="fill:var(--paper);stroke:var(--line)"/>`;
   L.n.forEach((p,i)=>{const dd=L.n.map((q,j)=>[j,Math.hypot(q[0]-p[0],q[1]-p[1])]).filter(x=>x[0]!==i).sort((x,y)=>x[1]-y[1]).slice(0,2);
    dd.forEach(([j])=>{const A=P(L,...p),B=P(L,...L.n[j]);s+=`<line class="grid" x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}"/>`;});});
   L.n.forEach(p=>{const A=P(L,...p);s+=`<circle class="dot" cx="${A[0]}" cy="${A[1]}" r="4"/>`;});
-  s+=TX(530,L.y+35,L.lab,'ts','start');});
+  s+=nr?TX(14,L.y-8,L.lab,'ts','start'):TX(530,L.y+35,L.lab,'ts','start');});
  const route=[[0,.1,.3],[0,.85,.4],[1,.85,.4],[1,.7,.55],[2,.7,.55],[2,.76,.62]];
  const pts=route.map(r=>P(layers[r[0]],r[1],r[2]));
  s+=`<path id="hnsw-path" pathLength="1" d="M${pts.map(p=>p.join(',')).join(' L')}" style="fill:none;stroke:var(--warn);stroke-width:2.5"/>`;
@@ -928,10 +962,10 @@ function playHNSW(){const p=document.getElementById('hnsw-path');if(!p)return;p.
 
 // ---- error attribution 2x2 ----
 function drawAttr(all,st){const rel=REL[current];const isP=PRESETS.some(p=>p.id===current&&$('q').value.trim()===p.q);
- const W=460,H=280,L=60,T=20,cw=190,ch=110;let s='';
+ const W=NAR()?340:460,H=280,L=NAR()?48:60,T=20,cw=NAR()?144:190,ch=110;let s='';
  const Q=[['部分證據已足夠','good',0,0],['成功','good',1,0],['檢索端問題\n漏檢、缺上下文','bad',0,1],['生成端問題\n衝突、未換算','bad',1,1]];
  Q.forEach(([t,c,cx,cy])=>{s+=`<rect x="${L+cx*cw}" y="${T+cy*ch}" width="${cw-4}" height="${ch-4}" rx="8" style="fill:var(--${c}bg);stroke:var(--line)"/>`+TX(L+cx*cw+cw/2-2,T+cy*ch+24,t,'t');});
- s+=TX(L+cw-2,H-12,'← 沒取到全部正確證據　｜　取到全部 →','ts')+TX(30,T+ch/2,'答對','ts')+TX(30,T+ch*1.5,'答錯\n或不足','ts');
+ s+=TX(L+cw-2,H-12,'← 沒取到全部正確證據　｜　取到全部 →','ts')+TX(NAR()?22:30,T+ch/2,'答對','ts')+TX(NAR()?22:30,T+ch*1.5,'答錯\n或不足','ts');
  if(isP&&rel){const got=rel.every(id=>all.some(h=>h.d.id===id));const ok=st==='ok';
   const cx=L+(got?1:0)*cw+cw/2-2,cy=T+(ok?0:1)*ch+ch/2+18;
   s+=`<circle cx="${cx}" cy="${cy}" r="12" style="fill:var(--accent)"/>`+TX(cx,cy+26,'目前設定','tl');}
@@ -939,7 +973,7 @@ function drawAttr(all,st){const rel=REL[current];const isP=PRESETS.some(p=>p.id=
  $('fig-attr').innerHTML=SV(W,H,s,'錯誤歸因四象限');}
 
 // ---- clickable pipeline ----
-function drawPipe2(){let s='';const W=122,w=104,X=i=>20+i*W;
+function drawPipe2(){if(NAR()){drawPipeN();showStep(PSEL);return;}let s='';const W=122,w=104,X=i=>20+i*W;
  const G=(id,inner)=>`<g class="step-g" data-step="${id}" tabindex="0" role="button" aria-label="${STEPS[id].t}">${inner}</g>`;
  s+=TX(20,16,'離線：建立索引（資料更新時才重跑）','tl','start');
  const off=[['載入文件\nPDF／網頁／對話',''],['清理\n保留來源與日期',''],['切塊\n數百字、可重疊',''],['向量化\nembedding','']];
@@ -955,9 +989,7 @@ function drawPipe2(){let s='';const W=122,w=104,X=i=>20+i*W;
  s+=TX(X(3)+w/2+8,203,'取回最相近的 k 個片段','ts','start');
  s+=TX(980,300,'點任一步驟看說明','ts','end');
  $('fig-pipe').innerHTML=SV(1000,310,s,'RAG 流程圖，可點選步驟');
- $('fig-pipe').addEventListener('click',e=>{const g=e.target.closest('[data-step]');if(g)showStep(g.dataset.step);});
- $('fig-pipe').addEventListener('keydown',e=>{const g=e.target.closest('[data-step]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showStep(g.dataset.step);}});
- showStep('on3');}
+ showStep(PSEL);}
 
 // ================= Agent Memory section =================
 const MEV=[
@@ -1013,7 +1045,7 @@ function drawSwim(){const V=mstate(mstep);const n=MEV.length,W=940,L=120,T=34,rh
    if(v.et==='ret')s+=TX(x2+8,y+rh/2-2,'✕','tb');});});
  $('fig-swim').innerHTML=SV(W,T+MKEYS.length*rh+4,s,'記憶版本泳道圖');}
 
-function drawGrowth(){const n=MEV.length,W=420,H=220,L=36,R=10,T=14,B=34;const X=i=>L+(i-1)/(n-1)*(W-L-R);
+function drawGrowth(){const n=MEV.length,W=NAR()?340:420,H=220,L=36,R=10,T=14,B=34;const X=i=>L+(i-1)/(n-1)*(W-L-R);
  const raw=[],ver=[],act=[];for(let i=1;i<=n;i++){const V=mstate(i);raw.push(i);let vv=0,aa=0;MKEYS.forEach(k=>{vv+=V[k].length;if(mactive(V,k))aa++;});ver.push(vv);act.push(aa);}
  const mx=Math.max(...raw,...ver);const Y=v=>T+(1-v/mx)*(H-T-B);let s='';
  [0,4,8,12].filter(v=>v<=mx).forEach(v=>{s+=`<line class="grid" x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}"/>`+TX(L-6,Y(v),String(v),'tm','end');});
@@ -1113,12 +1145,65 @@ function chunk(){let size=+$('cs').value,ov=+$('co').value;if(ov>=size)ov=size-5
 
 const TRADE=[['片段長度 ↑','up','dn','up','fl','256–1024 tokens'],['重疊 ↑','up','fl','up','fl','片段長度的 10–20%'],['k ↑','up','dn','up','up','3–10'],['相似度門檻 ↑','dn','up','dn','fl','依模型分數分布調整'],['查詢改寫','up','cu','up','up','1–3 個改寫'],['混合檢索（BM25＋向量）','up','up','fl','up','RRF，常數 60'],['重排序','fl','up','up','up','取 20–50 候選再留前 k'],['鄰近擴充','up','dn','up','fl','前後各 1 段']];
 const EF={up:['▲','提高'],dn:['▼','降低'],fl:['–','影響小'],cu:['±','視情況']};
-$('trade').innerHTML=TRADE.map(r=>'<tr><td>'+r[0]+'</td>'+r.slice(1,5).map(v=>'<td><span class="ef '+v+'" title="'+EF[v][1]+'">'+EF[v][0]+'</span></td>').join('')+'<td>'+r[5]+'</td></tr>').join('');
+$('trade').innerHTML=TRADE.map(r=>'<tr><td>'+r[0]+'<small class="sv">起始：'+r[5]+'</small></td>'+r.slice(1,5).map(v=>'<td><span class="ef '+v+'" title="'+EF[v][1]+'">'+EF[v][0]+'</span></td>').join('')+'<td>'+r[5]+'</td></tr>').join('');
 const GL=[['Embedding','把文字轉成固定長度向量的模型或其輸出，語意相近的文字向量相近。'],['向量資料庫','儲存向量並支援近似最近鄰搜尋的系統，通常也存原文與中繼資料。'],['ANN／HNSW','近似最近鄰搜尋。HNSW 用分層圖，犧牲極少準確度換取大幅加速。'],['BM25','經典關鍵字排序公式，考慮詞頻、逆文件頻率與文件長度。'],['RRF','倒數排名融合，把多份排名依 1/(常數＋名次) 加總合併。'],['Cross-encoder','把問題與片段一起輸入模型打分的重排序器，比向量比對準但慢。'],['Chunk','切塊後的片段，是檢索與引用的基本單位。'],['Top-k','檢索後交付給模型的片段數量。'],['Context window','模型一次能讀入的最大長度，提示超過會被截斷。'],['HyDE','先讓模型寫一段假設答案，再用它去檢索的查詢改寫技巧。'],['Faithfulness','忠實度：回答內容是否都能在交付的片段中找到依據。'],['Hallucination','幻覺：模型產生片段中沒有、甚至錯誤的內容。']];
 $('gloss').innerHTML=GL.map(g=>'<div class="term"><b>'+g[0]+'</b><p>'+g[1]+'</p></div>').join('');
 ['ea','eb'].forEach(id=>$(id).addEventListener('input',drawEmbed));
 $('hnsw-play').addEventListener('click',playHNSW);
 drawSparseDense();drawEmbed();drawHeat();drawHNSW();
+// ================= narrow (phone) layouts =================
+function drawHeroN(){let s='';const x=20,w=200,cx=x+w/2;
+ s+=BX(x,10,w,40,'使用者問題')+AR(cx,50,cx,68);
+ s+=BX(x,70,w,48,'檢索器　相似度搜尋','acc');
+ s+=CYL(285,98,92,30,'向量索引')+AR(238,94,222,94,'a');
+ ['片段1','片段2','片段3'].forEach((t,i)=>{s+=BX(x+i*69,140,62,28,t,'mk');});s+=AR(cx,118,cx,138);
+ s+=AR(cx,168,cx,186)+BX(x,188,w,44,'提示：指令＋片段＋問題')+AR(cx,232,cx,250);
+ s+=BX(x,252,w,44,'語言模型　只依片段作答','acc')+AR(cx,296,cx,314)+BX(x,316,w,40,'回答（附引用 [1][3]）','good');
+ s+=TX(236,154,'R 檢索','tl','start')+TX(236,210,'A 增強','tl','start')+TX(236,274,'G 生成','tl','start');
+ $('fig-hero').innerHTML=SV(340,364,s,'RAG 總覽（直式）');}
+
+function drawPipeN(){let s='';const G=(id,inner)=>`<g class="step-g" data-step="${id}" tabindex="0" role="button" aria-label="${STEPS[id].t}">${inner}</g>`;
+ const lx=8,rx=184,w=148,h=46,step=62,y0=34;
+ s+=TX(lx,16,'離線：建立索引','tl','start')+TX(rx,16,'線上：回答問題','tl','start');
+ const off=['載入文件\nPDF／網頁／對話','清理\n保留來源與日期','切塊\n數百字、可重疊','向量化\nembedding'];
+ off.forEach((t,i)=>{s+=G('off'+i,BX(lx,y0+i*step,w,h,t));if(i<3)s+=AR(lx+w/2,y0+i*step+h,lx+w/2,y0+(i+1)*step-2);});
+ const cyY=y0+4*step+24;s+=AR(lx+w/2,y0+3*step+h,lx+w/2,cyY-26,'a');
+ s+=G('idx',CYL(lx+w/2,cyY,w,34,'向量索引'));
+ s+=G('upd',BX(lx,cyY+56,w,52,'資料更新\n只需增補索引','dash'))+AR(lx+w/2,cyY+56,lx+w/2,cyY+26);
+ const on=[['使用者問題',''],['查詢改寫\n可選','acc dash'],['向量化問題\n同一模型',''],['檢索 top-k\n近鄰搜尋','acc'],['重排序\n可選','acc dash'],['組裝提示\n加編號',''],['LLM 生成\n依片段作答','acc'],['附引用回答','good']];
+ on.forEach((o,i)=>{s+=G('on'+i,BX(rx,y0+i*step,w,h,o[0],o[1]));if(i<7)s+=AR(rx+w/2,y0+i*step+h,rx+w/2,y0+(i+1)*step-2);});
+ s+=PA(`M${lx+w},${cyY} C${lx+w+20},${cyY} ${rx-20},${y0+3*step+h/2} ${rx-2},${y0+3*step+h/2}`,'a');
+ s+=TX(lx+w/2,cyY+134,'點任一步驟看說明','ts');
+ $('fig-pipe').innerHTML=SV(340,y0+8*step,s,'RAG 流程圖（直式），可點選步驟');}
+
+function drawMemLifeN(){let s='';const x=20,w=220,cx=x+w/2;
+ s+=BX(x,10,w,40,'對話輪次：使用者發言')+AR(cx,50,cx,62)+BX(x,64,w,40,'抽取候選事實','acc')+AR(cx,104,cx,116)+BX(x,118,w,40,'比對既有記憶','acc')+AR(cx,158,cx,170);
+ [['新增','good'],['更新','acc'],['撤回','bad'],['不變','']].forEach((o,i)=>{s+=BX(x+(i%2)*112,172+Math.floor(i/2)*34,108,28,o[0],o[1]);});
+ s+=AR(cx,240,cx,252)+BX(x,254,140,40,'寫入記憶庫（版本）')+BX(172,254,100,40,'定期壓縮','dash')+AR(172,274,162,274);
+ s+=AR(x+70,294,x+70,306)+BX(x,308,w,40,'檢索','acc')+AR(cx,348,cx,360)+BX(x,362,w,40,'回答（附引用）','good');
+ s+=PA(`M${x+w},382 L300,382 L300,30 L${x+w+2},30`,'a d')+TX(310,206,'下\n一\n輪','ts','start');
+ $('fig-memlife').innerHTML=SV(340,412,s,'代理記憶循環（直式）');}
+
+function drawMemTypesN(){let s='';const C=[['工作記憶','目前對話與上下文視窗','acc'],['情節記憶','帶時間的事件：3/15 說下週開始健身',''],['語意記憶','穩定事實：小林對花生過敏','good'],['程序記憶','做事規則：推薦餐廳前先查過敏','']];
+ const lab=['寫入','整合歸納','形成規則'];
+ C.forEach((c,i)=>{const y=6+i*96;s+=`<g class="bx ${c[2]}"><rect x="10" y="${y}" width="320" height="70" rx="8"/></g>`+TX(24,y+22,c[0],'tl','start')+TX(24,y+48,c[1],'t','start');
+  if(i<3)s+=AR(60,y+70,60,y+94,'a')+TX(70,y+84,lab[i],'ts','start');});
+ $('fig-memtypes').innerHTML=SV(340,380,s,'四種記憶類型（直式）');}
+
+function drawRevalN(){let s='';const x=50,w=240,cx=x+w/2;
+ s+=BX(x,8,w,48,'已產生的回答\n證據集合 E','good')+AR(cx,56,cx,72)+BX(x,74,w,48,'記憶有新寫入\n（更新／撤回）','bad')+AR(cx,122,cx,138);
+ s+=BX(x,140,w,48,'在新快照上重新檢索\n得到 E′','acc')+AR(cx,188,cx,204);
+ s+=`<polygon points="${cx},206 ${cx+70},240 ${cx},274 ${cx-70},240" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5"/>`+TX(cx,240,'E′＝E？');
+ s+=PA(`M${cx-70},240 L85,240 L85,298`,'')+TX(100,230,'是','ts')+BX(10,300,150,48,'保留原回答\n不必重新生成','good');
+ s+=PA(`M${cx+70},240 L255,240 L255,298`,'')+TX(240,230,'否','ts')+BX(180,300,150,48,'重新生成回答\n舊證據已失效','bad');
+ s+=TX(170,372,'新寫入可能讓別的片段排到前面，','ts')+TX(170,390,'所以要比對整組證據，不只看原證據還在不在。','ts');
+ $('fig-reval').innerHTML=SV(340,400,s,'回答後重新驗證流程（直式）');}
+
+const _dH=drawHero,_dML=drawMemLife,_dMT=drawMemTypes,_dRV=drawReval;
+drawHero=()=>NAR()?drawHeroN():_dH();drawMemLife=()=>NAR()?drawMemLifeN():_dML();drawMemTypes=()=>NAR()?drawMemTypesN():_dMT();drawReval=()=>NAR()?drawRevalN():_dRV();
+$('fig-pipe').addEventListener('click',e=>{const g=e.target.closest('[data-step]');if(g)showStep(g.dataset.step);});
+$('fig-pipe').addEventListener('keydown',e=>{const g=e.target.closest('[data-step]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showStep(g.dataset.step);}});
+try{matchMedia('(max-width:600px)').addEventListener('change',()=>{drawHero();drawPipe2();drawMemLife();drawMemTypes();drawReval();drawSparseDense();drawEmbed();drawHNSW();chunk();run();memRender();});}catch(e){}
 drawHero();drawPipe2();
 (function heroArt(){const p=PRESETS[0];const qv=vec(toks(p.q+' '+p.rw));const pts=mds(DV.concat([qv]));
  const xs=pts.map(a=>a[0]),ys=pts.map(a=>a[1]);const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
@@ -1133,8 +1218,10 @@ drawHero();drawPipe2();
  s+='<text x="'+X(q[0])+'" y="'+(Y(q[1])+9)+'" text-anchor="middle" style="font-size:26px;fill:var(--mark)">★</text>';
  s+='<text x="'+(W/2)+'" y="'+(H-10)+'" text-anchor="middle" style="font-family:var(--f-body);font-size:13px;fill:var(--band-muted)">問：'+esc(p.q)+'　最近的三則記憶被取回</text>';
  $('hero-art').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="記憶在向量空間中的分布，問題取回最近的三則">'+s+'</svg>';})();
-try{const links=[...document.querySelectorAll('.toc a')];const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id));});},{rootMargin:'-40% 0px -55% 0px'});
- document.querySelectorAll('.wrap>section[id]').forEach(el=>io.observe(el));}catch(e){}
+(function(){const links=[...document.querySelectorAll('.toc a')];const secs=[...document.querySelectorAll('.wrap>section[id]')];let tick=false;
+ function spy(){tick=false;let cur=null;secs.forEach(el=>{if(el.getBoundingClientRect().top<=window.innerHeight*0.3)cur=el.id;});
+  links.forEach(a=>{const on=a.getAttribute('href')==='#'+cur;if(on!==a.classList.contains('on')){a.classList.toggle('on',on);if(on&&a.scrollIntoView){const t=a.parentNode;t.scrollTo({left:a.offsetLeft-t.clientWidth/2+a.clientWidth/2,behavior:'smooth'});}}});}
+ window.addEventListener('scroll',()=>{if(!tick){tick=true;requestAnimationFrame(spy);}},{passive:true});spy();})();
 drawMemLife();drawMemTypes();drawSupport();drawReval();memRender();
 $('mprev').addEventListener('click',()=>memStep(-1));$('mnext').addEventListener('click',()=>memStep(1));
 $('ms').addEventListener('input',()=>{mstep=+$('ms').value;memRender();});$('mplay').addEventListener('click',memPlay);
