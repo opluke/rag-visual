@@ -1,0 +1,1148 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="可操作的 RAG 與 Agent Memory 互動圖解">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>RAG 檢索增強生成</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: index-card catalogue — one live demo up top, then pipeline, chunking, variants, failure modes; single 1120px column */
+:root{
+  --paper:#F2F5F8; --surface:#FFFFFF; --ink:#16202E; --muted:#5A6677; --line:#D6DDE6;
+  --accent:#2B4C9B; --accent-soft:#E3EAF8; --mark:#F5D547; --markbg:rgba(245,213,71,.55);
+  --good:#2E7D4F; --warn:#A8690F; --bad:#B23A3A; --goodbg:#E3F2E8; --warnbg:#FBF0DC; --badbg:#F8E3E3;
+  --f-display:'LXGW WenKai TC','Noto Serif TC',serif;
+  --f-body:'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;
+  --f-mono:'JetBrains Mono',Consolas,monospace;
+  --paper2:#E8EDF4; --shadow:0 1px 2px rgba(22,32,46,.05),0 10px 28px -12px rgba(22,32,46,.18); --band:#13223D; --band-fg:#EEF2F8; --band-muted:#A8B6CD; --band-line:#2E4266; --dot:rgba(43,76,155,.09); --toc-bg:rgba(242,245,248,.86); --on-mark:#16202E;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0E131B; --surface:#161D28; --ink:#E6EAF1; --muted:#9AA5B5; --line:#2A3342;
+  --accent:#8FAEF0; --accent-soft:#1E2A42; --mark:#D9B92E; --markbg:rgba(217,185,46,.33);
+  --good:#6FCB94; --warn:#E6B65C; --bad:#F08A8A; --goodbg:#16301F; --warnbg:#33280F; --badbg:#3A1C1C; --paper2:#121A26; --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.6); --band:#08101C; --band-fg:#EEF2F8; --band-muted:#94A3BB; --band-line:#22314D; --dot:rgba(143,174,240,.07); --toc-bg:rgba(14,19,27,.86); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0E131B; --surface:#161D28; --ink:#E6EAF1; --muted:#9AA5B5; --line:#2A3342;
+  --accent:#8FAEF0; --accent-soft:#1E2A42; --mark:#D9B92E; --markbg:rgba(217,185,46,.33);
+  --good:#6FCB94; --warn:#E6B65C; --bad:#F08A8A; --goodbg:#16301F; --warnbg:#33280F; --badbg:#3A1C1C; --paper2:#121A26; --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.6); --band:#08101C; --band-fg:#EEF2F8; --band-muted:#94A3BB; --band-line:#22314D; --dot:rgba(143,174,240,.07); --toc-bg:rgba(14,19,27,.86); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.7;padding-inline:20px;padding-block:0 64px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:72px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(2.2rem,5vw,3.4rem)}
+h2{font-size:clamp(1.6rem,3.2vw,2.1rem)}
+h3{font-size:1.15rem}
+p{margin:0}
+.eyebrow{font-size:.8rem;letter-spacing:.14em;color:var(--accent);font-weight:700}
+.lede{max-width:65ch;color:var(--muted);font-size:1.05rem}
+section{display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-direction:column;gap:8px}
+header{padding-top:48px;display:flex;flex-direction:column;gap:14px}
+header .def{font-family:var(--f-display);font-size:1.25rem;max-width:40em}
+.hl{background:linear-gradient(transparent 55%,var(--markbg) 55%)}
+
+/* demo */
+.demo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.label{font-size:.78rem;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:5px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.chip:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#q{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px}
+.ctl{display:flex;flex-direction:column;gap:2px;font-size:.92rem}
+.ctl small{color:var(--muted);font-size:.8rem;line-height:1.4}
+.ctl label{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.kv{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.hits{display:flex;flex-direction:column;gap:8px;list-style:none;margin:0;padding:0}
+.hit{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.hit.nb{border-style:dashed}
+.hit .id{font-family:var(--f-mono);font-size:.8rem;color:var(--accent);font-weight:600;padding-top:2px}
+.hit .meta{font-size:.78rem;color:var(--muted)}
+.hit .sc{font-family:var(--f-mono);font-size:.82rem;font-variant-numeric:tabular-nums;text-align:right;min-width:4.5em}
+.bar{height:4px;background:var(--line);border-radius:2px;margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+mark{background:var(--markbg);color:inherit;padding:0 1px;border-radius:2px}
+.empty{color:var(--muted);font-size:.92rem;padding:10px 0}
+#plot{width:100%;height:auto;display:block}
+#plot text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+pre.prompt{font-family:var(--f-mono);font-size:.8rem;line-height:1.6;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;margin:0;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto}
+.answer{border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line)}
+.answer .st{font-size:.8rem;font-weight:700;letter-spacing:.06em}
+.answer.ok{background:var(--goodbg);border-color:var(--good)} .answer.ok .st{color:var(--good)}
+.answer.warn{background:var(--warnbg);border-color:var(--warn)} .answer.warn .st{color:var(--warn)}
+.answer.bad{background:var(--badbg);border-color:var(--bad)} .answer.bad .st{color:var(--bad)}
+.answer.na{background:var(--paper)} .answer.na .st{color:var(--muted)}
+.answer .txt{font-size:1.05rem;font-weight:500}
+.answer .why{font-size:.88rem;color:var(--muted)}
+.note{font-size:.82rem;color:var(--muted)}
+
+/* pipeline */
+.lanes{display:flex;flex-direction:column;gap:18px}
+.lane{display:flex;flex-direction:column;gap:10px}
+.lane-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.lane-title span{font-size:.85rem;color:var(--muted)}
+.steps{display:flex;gap:0;overflow-x:auto;padding-bottom:4px}
+.step{flex:1 0 128px;display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-left:none;position:relative;min-width:128px}
+.step:first-child{border-left:1px solid var(--line);border-radius:10px 0 0 10px}
+.step:last-child{border-radius:0 10px 10px 0}
+.step b{font-size:.95rem}
+.step .n{font-family:var(--f-mono);font-size:.72rem;color:var(--accent)}
+.step p{font-size:.82rem;color:var(--muted);line-height:1.5}
+.step.opt{background:var(--accent-soft)}
+.step.opt .n::after{content:" 可選"}
+.bridge{font-size:.9rem;color:var(--muted);border-left:3px solid var(--mark);padding-left:12px;max-width:70ch}
+
+/* chunking */
+.chunker{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px}
+.chunks{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto;padding-right:4px}
+.chunk{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:8px;font-size:.92rem;padding:6px 10px;border-radius:6px;background:var(--paper);border:1px solid var(--line)}
+.chunk .ci{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);padding-top:3px}
+.chunk .ov{background:var(--markbg);border-radius:2px}
+.stats{display:flex;gap:18px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column}
+.stat b{font-family:var(--f-mono);font-size:1.4rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+
+/* variants */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:.92rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;letter-spacing:.08em;color:var(--muted);font-weight:700;background:var(--paper)}
+tr:last-child td{border-bottom:none}
+td:first-child{font-weight:700;white-space:nowrap}
+td .ref{display:block;font-weight:400;font-size:.78rem;color:var(--muted)}
+tr.mem td{background:var(--accent-soft)}
+
+/* failures */
+.fails{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.fail{padding:18px;border-top:3px solid var(--bad);background:var(--surface);border-radius:0 0 10px 10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.fail p{font-size:.92rem;color:var(--muted)}
+.try{font:inherit;font-size:.85rem;align-self:start;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:6px;padding:4px 10px;cursor:pointer}
+.try:hover{background:var(--accent-soft)}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.metric{display:flex;flex-direction:column;gap:4px;padding:14px 0;border-top:1px solid var(--line)}
+.metric b{font-family:var(--f-mono);font-size:.9rem;color:var(--accent)}
+.metric p{font-size:.9rem;color:var(--muted)}
+footer{font-size:.82rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+
+/* figures */
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.fig.scroll{overflow-x:auto}
+.fig.scroll svg{min-width:760px}
+.fig svg,.vcard svg,.fail svg{width:100%;height:auto;display:block}
+svg .bx rect{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+svg .bx.acc rect{fill:var(--accent-soft);stroke:var(--accent)}
+svg .bx.mk rect{fill:var(--markbg);stroke:var(--mark)}
+svg .bx.bad rect{fill:var(--badbg);stroke:var(--bad)}
+svg .bx.good rect{fill:var(--goodbg);stroke:var(--good)}
+svg .bx.dash rect{stroke-dasharray:5 3}
+svg .t{fill:var(--ink);font-family:var(--f-body);font-size:13px}
+svg .ts{fill:var(--muted);font-family:var(--f-body);font-size:11px}
+svg .tm{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+svg .tl{fill:var(--accent);font-family:var(--f-body);font-size:13px;font-weight:700}
+svg .tb{fill:var(--bad);font-family:var(--f-body);font-size:11px}
+svg .ar{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#arw)}
+svg .ar.a{stroke:var(--accent);marker-end:url(#arwa)}
+svg .ar.b{stroke:var(--bad);marker-end:url(#arwb)}
+svg .ar.d{stroke-dasharray:5 3}
+svg .ar.n{marker-end:none}
+svg .ah{fill:var(--muted)} svg .ah.a{fill:var(--accent)} svg .ah.b{fill:var(--bad)}
+svg .cyl{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+svg .dot{fill:var(--surface);stroke:var(--muted);stroke-width:1.5}
+svg .dot.on{fill:var(--accent);stroke:var(--accent)}
+svg .dot.bad{fill:var(--bad);stroke:var(--bad)}
+svg .dot.good{fill:var(--good);stroke:var(--good)}
+svg .ring{fill:var(--markbg);stroke:var(--mark);stroke-dasharray:5 3}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .ln{stroke:var(--accent);stroke-width:2;fill:none}
+svg .bg{fill:var(--paper)}
+svg .cr{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1}
+svg .ovr{fill:var(--mark)}
+svg .sent{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+svg .cut{fill:var(--bad)}
+svg .cell{fill:var(--surface);stroke:var(--line)}
+svg .cell.rel{fill:var(--goodbg);stroke:var(--good)}
+svg .cell.wk{fill:var(--markbg);stroke:var(--mark)}
+svg .cell.today{fill:var(--accent);stroke:var(--accent)}
+svg .kline{stroke:var(--accent);stroke-width:2;stroke-dasharray:6 4}
+.vgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.vcard.mem{border-color:var(--accent);background:var(--accent-soft)}
+.vcard p{font-size:.86rem;color:var(--muted);line-height:1.5}
+.evalp{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px}
+.evalnums{display:flex;gap:24px;flex-wrap:wrap}
+
+.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;padding-block:10px;margin-inline:-20px;padding-inline:20px}
+.toc a{white-space:nowrap;color:var(--muted);text-decoration:none;font-size:.88rem;padding:4px 10px;border-radius:999px}
+.toc a:hover{background:var(--accent-soft);color:var(--accent)}
+section{scroll-margin-top:60px}
+.sub{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.detail{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.detail dl{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:6px 14px;margin:0;font-size:.93rem}
+.detail dt{color:var(--muted);font-weight:700}.detail dd{margin:0}
+svg .step-g{cursor:pointer}
+svg .step-g:hover rect,svg .step-g:focus rect,svg .step-g.sel rect{stroke:var(--accent);stroke-width:3}
+svg .step-g:hover path,svg .step-g.sel path,svg .step-g.sel ellipse{stroke-width:3}
+svg .step-g:focus{outline:none}
+.ein{display:flex;flex-direction:column;gap:10px}
+.ein input{font:inherit;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+.gauge{height:14px;background:var(--paper);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.gauge i{display:block;height:100%;background:var(--accent)}
+.big{font-family:var(--f-mono);font-size:2rem;font-weight:600;font-variant-numeric:tabular-nums}
+#hnsw-path{stroke-dasharray:1;stroke-dashoffset:0}
+@media (prefers-reduced-motion:no-preference){#hnsw-path.go{animation:draw 2.4s ease forwards}}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.trade td,.trade th{text-align:center}.trade td:first-child,.trade th:first-child,.trade td:last-child,.trade th:last-child{text-align:left}
+.ef{display:inline-block;min-width:2.2em;padding:2px 8px;border-radius:999px;font-weight:700;font-size:.85rem}
+.ef.up{background:var(--goodbg);color:var(--good)}.ef.dn{background:var(--badbg);color:var(--bad)}.ef.fl{background:var(--paper);color:var(--muted)}.ef.cu{background:var(--warnbg);color:var(--warn)}
+.gloss{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.term{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.term b{font-family:var(--f-mono);color:var(--accent);font-size:.92rem}
+.term p{font-size:.88rem;color:var(--muted);line-height:1.55}
+.mctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.mctl input[type=range]{flex:1 1 220px}
+.mctl button{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:5px 12px;cursor:pointer}
+.mctl button.pri{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.evcard{display:flex;flex-direction:column;gap:6px}
+.evcard .meta{font-size:.8rem;color:var(--muted)}
+.evtext{font-family:var(--f-display);font-size:1.25rem}
+.ops{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.op{font-size:.78rem;font-weight:700;padding:2px 9px;border-radius:999px}
+.op.ADD{background:var(--goodbg);color:var(--good)}.op.UPDATE{background:var(--accent-soft);color:var(--accent)}.op.RETRACT{background:var(--badbg);color:var(--bad)}.op.NOOP{background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+.opk{font-family:var(--f-mono);font-size:.85rem}
+.asof{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.asof .answer .txt{font-size:1rem}
+.policy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.pcol{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pkey{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:8px;border-top:1px solid var(--line)}
+.pkey .label{flex-basis:100%}
+.ver{font-size:.85rem;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--paper);display:inline-flex;flex-direction:column;line-height:1.35}
+.ver small{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.ver.cur{background:var(--accent-soft);border-color:var(--accent)}
+.ver.old{text-decoration:line-through;color:var(--muted)}
+.ver.old small{text-decoration:none}
+.ver.ret{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.ver.gone,.ver.none{color:var(--muted);border-style:dashed}
+.arrow{color:var(--muted)}
+#sup-why{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px;font-size:.92rem}
+@media (max-width:860px){.policy{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){.asof{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}.gloss{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.gloss{grid-template-columns:minmax(0,1fr)}.detail dl{grid-template-columns:minmax(0,1fr)}.toc{margin-inline:-16px;padding-inline:16px}}
+@media (max-width:860px){
+  .demo,.chunker,.evalp{grid-template-columns:minmax(0,1fr)}
+  .metrics{grid-template-columns:minmax(0,1fr)}
+  .vgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:600px){
+  .controls,.fails,.vgrid{grid-template-columns:minmax(0,1fr)}
+  body{padding-inline:16px}
+}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .35s ease}.answer{transition:background .25s}}
+
+/* ===== visual polish (v5) ===== */
+body{background-color:var(--paper);background-image:radial-gradient(var(--dot) 1.1px,transparent 1.4px);background-size:22px 22px;padding-block:0}
+.wrap{gap:0;counter-reset:sec}
+.wrap>section{padding-block:64px;counter-increment:sec}
+.wrap>section:nth-of-type(even){background:var(--paper2);box-shadow:0 0 0 100vmax var(--paper2);clip-path:inset(0 -100vmax)}
+h2{font-size:clamp(1.8rem,3.6vw,2.5rem);letter-spacing:.01em}
+.wrap>section>.head{gap:10px;margin-bottom:8px}
+.wrap>section>.head .eyebrow{display:flex;align-items:center;gap:10px}
+.wrap>section>.head .eyebrow::before{content:counter(sec,decimal-leading-zero);font-family:var(--f-mono);font-size:.78rem;letter-spacing:0;padding:3px 8px;border-radius:6px;background:var(--accent);color:var(--surface)}
+.panel,.fig,.vcard,.pcol,.term,.tbl,.detail{border-radius:14px;box-shadow:var(--shadow)}
+.fail{border:1px solid var(--line);border-top:3px solid var(--bad);border-radius:14px;box-shadow:var(--shadow)}
+.vcard,.term{transition:transform .2s ease,box-shadow .2s ease}
+@media (hover:hover){.vcard:hover,.term:hover{transform:translateY(-2px)}}
+.hit{border-radius:10px;background:var(--surface)}
+.chip{transition:background .15s,border-color .15s}
+.chip:hover{border-color:var(--accent)}
+.label{display:flex;align-items:center;gap:8px}
+/* hero band */
+header.hero{background:var(--band);box-shadow:0 0 0 100vmax var(--band);clip-path:inset(0 -100vmax);color:var(--band-fg);padding-block:56px 48px;gap:32px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:center}
+.hero-text{display:flex;flex-direction:column;gap:18px;min-width:0}
+.hero .eyebrow{color:var(--mark)}
+.hero h1{font-size:clamp(2.6rem,6.2vw,4.6rem);color:var(--band-fg);line-height:1.1}
+.hero h1 .en{display:block;font-family:var(--f-mono);font-weight:600;font-size:.42em;letter-spacing:.32em;color:var(--band-muted);margin-bottom:10px}
+.hero .def{color:var(--band-fg);font-size:1.3rem;line-height:1.6}
+.hero .hl{background:linear-gradient(transparent 58%,rgba(245,213,71,.42) 58%)}
+.hero .lede{color:var(--band-muted)}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;font-size:.95rem}
+.btn.pri{background:var(--mark);color:var(--on-mark)}
+.btn.ghost{border:1px solid var(--band-line);color:var(--band-fg)}
+.btn:hover{filter:brightness(1.06)}
+.btn:focus-visible{outline:2px solid var(--mark);outline-offset:3px}
+.hero-art{min-width:0}
+.hero-art svg{width:100%;height:auto;display:block}
+.hero .fig{border-color:var(--band-line)}
+/* toc */
+.toc{background:var(--toc-bg);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.toc a{transition:background .15s,color .15s}
+.toc a.on{background:var(--accent);color:var(--surface)}
+/* footer band */
+footer{background:var(--band);box-shadow:0 0 0 100vmax var(--band);clip-path:inset(0 -100vmax);color:var(--band-muted);border:none;padding-block:32px;display:flex;flex-direction:column;gap:6px}
+footer b{color:var(--band-fg);font-family:var(--f-display);font-size:1.1rem}
+@media (max-width:860px){.hero-grid{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:520px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="hero">
+ <div class="hero-grid">
+ <div class="hero-text">
+  <p class="eyebrow">互動圖解</p>
+  <h1><span class="en">RETRIEVAL-AUGMENTED GENERATION</span>RAG 檢索增強生成</h1>
+  <p class="def">先從外部資料<span class="hl">找出相關片段</span>，再把片段連同問題交給語言模型，讓回答<span class="hl">有憑有據、可以追溯</span>。</p>
+  <p class="lede">下方是一個可以操作的小型 RAG。資料庫是一位虛構使用者「小林」的 11 則對話記憶；檢索用的是真的字元二元組 TF-IDF 與餘弦相似度，在瀏覽器裡即時計算。生成步驟沒有接語言模型，答案依規則模擬，用來呈現「檢索到什麼，就決定能答出什麼」。</p>
+  <div class="cta"><a class="btn pri" href="#demo">開始操作示範 ↓</a><a class="btn ghost" href="#mem">看 Agent Memory</a></div>
+ </div>
+ <div class="hero-art" id="hero-art"></div>
+ </div>
+  <div class="fig scroll" id="fig-hero"></div>
+</header>
+<nav class="toc" aria-label="段落">
+<a href="#demo">互動示範</a><a href="#pipe">流程</a><a href="#chunk">切塊</a><a href="#embed">向量化</a><a href="#retr">檢索方法</a><a href="#var">演進</a><a href="#mem">Agent Memory</a><a href="#fail">失敗與評估</a><a href="#guide">參數與名詞</a>
+</nav>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+<marker id="arwa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah a"/></marker>
+<marker id="arwb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah b"/></marker>
+</defs></svg>
+
+<section id="demo" aria-labelledby="demo-h">
+  <div class="head">
+    <p class="eyebrow">互動示範</p>
+    <h2 id="demo-h">問一個問題，看它怎麼被檢索與回答</h2>
+  </div>
+  <div class="demo">
+    <div class="panel">
+      <p class="label">1　問題</p>
+      <div class="presets" id="presets" role="group" aria-label="預設問題"></div>
+      <input id="q" type="text" aria-label="輸入問題" autocomplete="off">
+      <p class="label">2　檢索設定</p>
+      <div class="controls">
+        <div class="ctl"><label for="k">取前 k 筆　<span class="kv" id="kv">3</span></label><input id="k" type="range" min="1" max="6" value="3"><small>交給模型的片段數量上限</small></div>
+        <div class="ctl"><label for="th">相似度門檻　<span class="kv" id="thv">0.03</span></label><input id="th" type="range" min="0" max="0.2" step="0.01" value="0.03"><small>低於門檻的片段不交付</small></div>
+        <div class="ctl"><label><input type="checkbox" id="rw">查詢改寫</label><small>先把口語問題擴充成同義關鍵詞</small></div>
+        <div class="ctl"><label><input type="checkbox" id="nb">鄰近擴充</label><small>同一天前後相鄰的對話一起帶入</small></div>
+        <div class="ctl"><label><input type="checkbox" id="tm">時間感知</label><small>標註日期、較新證據優先、換算相對時間</small></div>
+      </div>
+      <p class="label">3　檢索結果 <span id="hitcount" class="kv"></span></p>
+      <ul class="hits" id="hits"></ul>
+    </div>
+    <div class="panel">
+      <p class="label">向量空間（二維投影）</p>
+      <svg id="plot" viewBox="0 0 420 260" role="img" aria-label="記憶片段與問題在向量空間中的相對位置"></svg>
+      <p class="note">每個點是一則記憶，★ 是問題。距離越近越相似；這是用古典 MDS 從餘弦距離壓到二維的近似圖。</p>
+      <p class="label">4　組裝後的提示</p>
+      <pre class="prompt" id="prompt"></pre>
+      <div id="fig-pbar"></div>
+      <p class="label">5　模擬回答</p>
+      <div class="answer na" id="answer" aria-live="polite"><span class="st"></span><span class="txt"></span><span class="why"></span></div>
+    </div>
+  </div>
+</section>
+
+<section id="pipe" aria-labelledby="pipe-h">
+  <div class="head">
+    <p class="eyebrow">流程</p>
+    <h2 id="pipe-h">兩條線：事先建索引，查詢時才檢索</h2>
+    <p class="lede">建索引在離線完成一次，之後每個問題只走查詢那條線。虛線框是進階做法，上面的示範可以切換其中幾個。向量化時，問題與文件必須用同一個 embedding 模型，向量才能比較。</p>
+  </div>
+  <div class="fig scroll" id="fig-pipe"></div>
+  <div class="detail" id="pipe-detail" aria-live="polite"></div>
+  <p class="bridge">RAG 不改模型權重。知識放在索引裡，更新資料只要重建或增補索引，回答也能附上來源編號，方便查核。</p>
+</section>
+
+<section id="chunk" aria-labelledby="chunk-h">
+  <div class="head">
+    <p class="eyebrow">切塊</p>
+    <h2 id="chunk-h">片段切多大，決定檢索找得到什麼</h2>
+    <p class="lede">切太小，一句話可能失去主詞；切太大，無關內容會稀釋相似度，也佔掉提示長度。重疊可以避免關鍵句被切斷，但會增加片段數。</p>
+  </div>
+  <div class="fig scroll" id="fig-chunk"></div>
+  <div class="chunker">
+    <div class="panel">
+      <div class="ctl"><label for="cs">片段長度　<span class="kv" id="csv">60</span> 字</label><input id="cs" type="range" min="20" max="160" step="5" value="60"></div>
+      <div class="ctl"><label for="co">重疊　<span class="kv" id="cov">10</span> 字</label><input id="co" type="range" min="0" max="40" step="5" value="10"></div>
+      <div class="stats">
+        <div class="stat"><b id="cn">0</b><span>片段數</span></div>
+        <div class="stat"><b id="ct">0</b><span>總字數（含重疊）</span></div>
+        <div class="stat"><b id="cr">0%</b><span>重複比例</span></div>
+        <div class="stat"><b id="cc">0</b><span>切在句子中間</span></div>
+      </div>
+      <p class="note">上圖每一列是一個片段，橫軸是原文位置：黃色是與前一片段重疊的部分，虛線是句號位置，紅點表示片段在句子中間被切斷。真實系統常以 token 計長度，並優先在句號、段落處切開。</p>
+    </div>
+    <div class="chunks" id="chunks" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="embed" aria-labelledby="emb-h">
+  <div class="head">
+    <p class="eyebrow">向量化</p>
+    <h2 id="emb-h">文字怎麼變成可以比較的向量</h2>
+    <p class="lede">每段文字被轉成一串數字。兩個向量夾角越小，餘弦相似度越接近 1，代表內容越相近。本頁用的是字元二元組的 TF-IDF 稀疏向量：字面重疊越多、越少見的詞組權重越高。實務上多用神經網路的密集 embedding，它能把「禁忌」和「過敏」這種沒有共同字的詞也放得很近。</p>
+  </div>
+  <div class="fig"><div id="fig-sd"></div></div>
+  <div class="two">
+    <div class="panel ein">
+      <p class="label">輸入兩個句子，即時計算相似度</p>
+      <input id="ea" type="text" aria-label="句子 A" value="小林對花生過敏">
+      <input id="eb" type="text" aria-label="句子 B" value="我對花生過敏，吃東西要小心。">
+      <div><span class="big" id="ecos">0</span>　<span class="note">餘弦相似度（0 到 1）</span></div>
+      <div class="gauge"><i id="ebar"></i></div>
+      <p class="note">右圖列出兩句的二元組與權重，黃色是兩句共有、真正貢獻相似度的部分。試著把句子 B 改成「我不能吃花生」，看相似度怎麼掉。</p>
+    </div>
+    <div class="fig"><div id="fig-butterfly"></div></div>
+  </div>
+  <div class="sub"><h3>資料庫裡 11 則記憶彼此有多像</h3><p class="note">顏色越深越相似。m4 與 m5 都在講日文課，m1、m6、m10 都提到旅行；這些相近的片段會在檢索時互相競爭名次。滑鼠停在格子上可看數值。</p></div>
+  <div class="fig"><div id="fig-heat" style="max-width:440px;margin:0 auto"></div></div>
+</section>
+
+<section id="retr" aria-labelledby="retr-h">
+  <div class="head">
+    <p class="eyebrow">檢索方法</p>
+    <h2 id="retr-h">同一個問題，三種排名方式</h2>
+    <p class="lede">BM25 是傳統關鍵字檢索，看詞組出現次數與稀有程度；字元 TF-IDF 餘弦是上方示範用的方法；RRF（倒數排名融合）把兩份排名合併，每份名次 r 貢獻 1/(60＋r)。兩種方法都只看字面，所以沒有共同字的同義詞仍會漏檢，這是密集 embedding 要補的部分。下圖跟著上方示範的問題與「查詢改寫」設定即時更新，綠線是這題真正需要的證據。</p>
+  </div>
+  <div class="fig scroll"><div id="fig-bump" style="min-width:560px"></div></div>
+  <div class="two">
+    <div class="sub">
+      <h3>重排序：讓較新的證據往前</h3>
+      <p class="note">取相似度前 6 名，用示範公式「新分數＝相似度×(1＋0.6×新近度)」重新排序，新近度依日期從 0 到 1。綠線代表名次上升，紅線代表下降。實務上的重排序多半用 cross-encoder 模型逐對打分，這裡只示範時間這一個因素。</p>
+      <div class="fig"><div id="fig-rerank"></div></div>
+    </div>
+    <div class="sub">
+      <h3>向量索引怎麼快速找到近鄰（HNSW 示意）</h3>
+      <p class="note">百萬筆向量不能逐一比較。HNSW 把節點分層：上層少而稀疏，可以大步跳；越往下越密。搜尋從頂層入口出發，每層貪婪地走向離問題（★）最近的節點，再往下一層細找。</p>
+      <div class="fig"><div id="fig-hnsw"></div><button class="try" id="hnsw-play" style="margin-top:8px">播放搜尋路徑</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="var" aria-labelledby="var-h">
+  <div class="head">
+    <p class="eyebrow">演進</p>
+    <h2 id="var-h">從單次檢索到會修訂的代理記憶</h2>
+  </div>
+  <div class="vgrid" id="vgrid"></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>做法</th><th>核心想法</th><th>何時檢索</th><th>資料更新時</th><th>主要風險</th></tr></thead>
+      <tbody>
+        <tr><td>Naive RAG<span class="ref">Lewis et al., 2020</span></td><td>切塊、向量檢索、塞進提示</td><td>每題一次</td><td>重建或增補索引</td><td>漏檢、片段缺上下文</td></tr>
+        <tr><td>Advanced RAG</td><td>混合檢索（BM25＋向量）、查詢改寫、重排序</td><td>每題一次，前後多處理</td><td>同上</td><td>多一道模型呼叫的延遲與成本</td></tr>
+        <tr><td>Self-RAG<span class="ref">Asai et al., 2023</span></td><td>模型自己判斷要不要檢索、片段有沒有用</td><td>按需</td><td>同上</td><td>需要特別訓練的模型</td></tr>
+        <tr><td>GraphRAG<span class="ref">Edge et al., 2024</span></td><td>先抽實體與關係建圖，做社群摘要回答全域問題</td><td>每題，走圖與摘要</td><td>建圖成本高，增量更新困難</td><td>建庫大量呼叫模型</td></tr>
+        <tr><td>Agentic RAG</td><td>代理規劃多輪查詢、呼叫工具、合併結果</td><td>多輪、自主決定</td><td>同上</td><td>步數與成本難以預測</td></tr>
+        <tr class="mem"><td>Agent Memory<span class="ref">如 Mem0、A-Mem</span></td><td>邊對話邊寫入記憶，處理更正、撤回與遺忘</td><td>每輪對話</td><td>記憶本身要能修訂與追溯</td><td>舊記憶沒失效，回答引用過期證據</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="bridge">上方示範用的正是代理記憶型資料：小林改過住宿和上課時間。沒有時間感知時，檢索會同時拿到新舊兩條，模型無從判斷該信哪一條。</p>
+</section>
+
+<section id="mem" aria-labelledby="mem-h">
+  <div class="head">
+    <p class="eyebrow">AGENT MEMORY</p>
+    <h2 id="mem-h">代理記憶：一邊對話一邊被改寫的資料庫</h2>
+    <p class="lede">一般 RAG 的文件由人維護，內容相對固定。代理記憶的資料由對話即時寫入，使用者會更正、撤回、重複確認，同一件事會有多個版本。所以除了怎麼檢索，還要決定怎麼寫入、怎麼更新，以及回答之後記憶又變了該怎麼辦。</p>
+  </div>
+  <div class="fig scroll"><div id="fig-memlife"></div></div>
+  <p class="bridge">每一輪對話先抽出候選事實，再和既有記憶比對，決定新增、更新、撤回或不變。Mem0 等系統用的就是這類操作；差別在於舊版本要不要保留、能不能追溯。</p>
+
+  <div class="two">
+    <div class="sub"><h3>記憶的四種類型</h3><p class="note">借用認知科學的分類。情節記憶記錄「什麼時候發生了什麼」，反覆出現的內容再整合成語意記憶；做事的偏好與規則則形成程序記憶。工作記憶就是目前的上下文視窗，容量有限，所以其他三種要存在外部、需要時再檢索。</p></div>
+    <div class="fig"><div id="fig-memtypes"></div></div>
+  </div>
+
+  <div class="sub"><h3>逐輪模擬：小林的 12 輪對話</h3><p class="note">拖動滑桿或按「下一輪」，看每句話觸發哪種操作。泳道圖每一列是一項記憶，藍色是目前有效的版本，灰色是已被取代的舊版本，紅色是被撤回的，綠點表示使用者再次確認。</p></div>
+  <div class="panel">
+    <div class="mctl">
+      <button id="mprev" aria-label="上一輪">上一輪</button>
+      <input id="ms" type="range" min="1" max="12" value="1" aria-label="對話輪次">
+      <button id="mnext" class="pri" aria-label="下一輪">下一輪</button>
+      <button id="mplay">自動播放</button>
+      <span class="kv" id="msv"></span>
+    </div>
+    <div class="evcard" id="mev" aria-live="polite"></div>
+  </div>
+  <div class="fig scroll"><div id="fig-swim"></div></div>
+  <div class="two">
+    <div class="sub"><h3>此刻去問代理</h3><p class="note">答案只依截至這一輪的有效記憶。往回拖動滑桿，就能看到「當時」代理會怎麼回答。</p><div class="asof" id="asof"></div></div>
+    <div class="sub"><h3>記憶數量怎麼成長</h3><p class="note">原始訊息每輪都增加；整合後的有效記憶成長較慢，更新與撤回不會讓它變多。版本總數則保留了變更歷史。</p><div class="fig"><div id="fig-growth"></div></div></div>
+  </div>
+
+  <div class="sub"><h3>三種寫入策略，同一段對話</h3><p class="note">跟著上方滑桿變化。比較住宿（被更新過）、健身（被撤回）、咖啡（被修正）三項在不同策略下留下什麼。</p></div>
+  <div class="policy" id="policy"></div>
+
+  <div class="sub"><h3>支持關係：撤回一則證據，哪些記憶要跟著失效？</h3><p class="note">推導出的記憶要記住自己靠哪些證據成立。「或」表示任一組支持就成立，「且」表示全部都要成立。點左邊的證據把它撤回，看影響怎麼傳遞。這個想法源自真值維護系統（TMS）。</p></div>
+  <div class="two">
+    <div class="fig scroll"><div id="fig-support" style="min-width:560px"></div></div>
+    <div class="panel"><p class="label">目前的推理</p><ul id="sup-why"></ul><button class="try" id="sup-reset">全部恢復</button></div>
+  </div>
+
+  <div class="sub"><h3>回答之後，記憶又變了</h3><p class="note">代理的回答可能被快取或延後送出。如果中間有新的寫入，要在新的記憶快照上重新檢索，確認交付的證據完全相同才能沿用舊回答。</p></div>
+  <div class="fig scroll"><div id="fig-reval"></div></div>
+</section>
+
+<section id="fail" aria-labelledby="fail-h">
+  <div class="head">
+    <p class="eyebrow">失敗模式</p>
+    <h2 id="fail-h">RAG 常見的四種錯，都能在上面重現</h2>
+  </div>
+  <div class="fails">
+    <div class="fail"><h3>漏檢</h3><div data-fig="f1"></div><p>問題用語和資料不同，「飲食禁忌」比對不到「花生過敏」。查詢改寫或混合檢索可以補救。</p><button class="try" data-try="q4">重現：關閉查詢改寫</button></div>
+    <div class="fail"><h3>片段缺上下文</h3><div data-fig="f2"></div><p>一問一答被切成兩則：只取到「是的，下週開始」就不知道主詞，只取到問句又沒有答案。鄰近擴充把同一段對話一起帶入。</p><button class="try" data-try="q3">重現：k＝1、不擴充</button></div>
+    <div class="fail"><h3>新舊證據衝突</h3><div data-fig="f3"></div><p>京都與大阪兩條都被檢索到，模型可能挑錯。需要版本與時間資訊，或在寫入時讓舊記憶失效。</p><button class="try" data-try="q1">重現：關閉時間感知</button></div>
+    <div class="fail"><h3>相對時間沒換算</h3><div data-fig="f4"></div><p>證據寫「下週」，回答若照抄就失去意義。要用對話日期換算成實際日期。</p><button class="try" data-try="q3b">重現：k＝3、關閉時間感知</button></div>
+  </div>
+  <div class="two">
+    <div class="sub"><h3>錯誤歸因：問題出在檢索還是生成？</h3><p class="note">橫軸看該拿的證據是否全部交付，縱軸看回答是否正確。藍點是上方示範目前的位置。先判斷落在哪一格，才知道該調檢索還是調提示與生成。</p></div>
+    <div class="fig"><div id="fig-attr"></div></div>
+  </div>
+  <div class="head" style="margin-top:12px"><h3>怎麼評估：用上方示範的問題即時計算</h3><p class="lede">左圖把 11 則記憶依相似度排名，綠色是這題真正需要的證據，虛線是目前的 k；右圖是 k 從 1 到 11 時的 Recall@k。切換上方的問題或「查詢改寫」，兩張圖會一起變。</p></div>
+  <div class="evalp">
+    <div class="fig"><div id="fig-rank"></div><div class="evalnums" style="margin-top:10px"><div class="stat"><b id="ev-r">–</b><span id="ev-rl">Recall@k</span></div><div class="stat"><b id="ev-m">–</b><span>MRR（第一個正確證據排名的倒數）</span></div></div></div>
+    <div class="fig"><div id="fig-curve"></div></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><b>Recall@k</b><p>該找的片段，有幾成出現在前 k 筆。</p></div>
+    <div class="metric"><b>MRR／nDCG</b><p>正確片段排得多前面。</p></div>
+    <div class="metric"><b>答案正確率</b><p>和標準答案比對，如 F1 或完全相符。</p></div>
+    <div class="metric"><b>忠實度</b><p>回答的每個主張，是否都能在交付的片段中找到。</p></div>
+    <div class="metric"><b>引用支持</b><p>標註的引用編號是否真的支持那句話；用 LLM 自動評審時，需要先和人工標註校準。</p></div>
+    <div class="metric"><b>成本與延遲</b><p>建索引、查詢、生成各花多少 token 與時間，要分開計算。</p></div>
+  </div>
+</section>
+
+<section id="guide" aria-labelledby="guide-h">
+  <div class="head">
+    <p class="eyebrow">參數與名詞</p>
+    <h2 id="guide-h">調參數之前先知道取捨</h2>
+    <p class="lede">每個參數都在召回、精準、成本、延遲之間取捨。下表是調高某個參數或加入某個步驟時常見的趨勢，起始值是常見做法，實際仍要用自己的資料評估。</p>
+  </div>
+  <div class="tbl">
+    <table class="trade">
+      <thead><tr><th>調整</th><th>召回</th><th>精準</th><th>提示長度與成本</th><th>延遲</th><th>常見起始值</th></tr></thead>
+      <tbody id="trade"></tbody>
+    </table>
+  </div>
+  <div class="sub"><h3>名詞速查</h3></div>
+  <div class="gloss" id="gloss"></div>
+</section>
+
+<footer><b>RAG 檢索增強生成</b>示範資料為虛構。檢索計算為真實的字元二元組 TF-IDF 加餘弦相似度；回答為規則模擬，不代表任何模型的實際輸出。</footer>
+</div>
+
+<script>
+(function(){
+const DOCS=[
+{id:'m1',date:'2026-03-02',who:'小林',text:'我下個月要去京都旅行，預計住四晚。'},
+{id:'m2',date:'2026-03-02',who:'小林',text:'提醒一下，我對花生過敏，吃東西要小心。'},
+{id:'m3',date:'2026-03-05',who:'小林',text:'住宿改到大阪了，因為朋友住在那裡。'},
+{id:'m4',date:'2026-03-08',who:'小林',text:'我最近開始學日文，每週二和週四上課。'},
+{id:'m5',date:'2026-03-10',who:'小林',text:'日文課改到每週三晚上了。'},
+{id:'m6',date:'2026-03-12',who:'小林',text:'我養了一隻叫麻糬的柴犬，旅行時託給姊姊照顧。'},
+{id:'m7',date:'2026-03-15',who:'助理',text:'你上次提到的健身計畫，打算什麼時候開始？'},
+{id:'m8',date:'2026-03-15',who:'小林',text:'是的，下週開始。'},
+{id:'m9',date:'2026-03-20',who:'小林',text:'我喜歡抹茶甜點，但是不喝咖啡。'},
+{id:'m10',date:'2026-03-22',who:'小林',text:'這趟旅行的預算大約五萬元台幣。'},
+{id:'m11',date:'2026-03-25',who:'小林',text:'大阪的行程延後到五月出發。'}];
+const PRESETS=[
+ {id:'q1',q:'小林旅行時住在哪裡？',rw:'住宿 地點 行程'},
+ {id:'q2',q:'小林的日文課是星期幾？',rw:'每週 上課 時間'},
+ {id:'q3',q:'小林什麼時候開始健身？',rw:'運動 計畫'},
+ {id:'q4',q:'小林有什麼飲食禁忌？',rw:'過敏 不能吃 不喝'}];
+const STOP=new Set('的了是我你在有什麼嗎呢吧要和但一這那個也就都'.split(''));
+function toks(s){const c=s.replace(/[^一-鿿A-Za-z0-9]/g,' ');const out={};
+ for(const seg of c.split(/\s+/)){if(!seg)continue;const ch=[...seg];
+  for(let i=0;i<ch.length;i++){if(!STOP.has(ch[i]))out['u:'+ch[i]]=(out['u:'+ch[i]]||0)+0.4;
+   if(i+1<ch.length){const b=ch[i]+ch[i+1];out['b:'+b]=(out['b:'+b]||0)+1;}}}
+ return out;}
+const TF=DOCS.map(d=>toks(d.text));const DF={};TF.forEach(t=>Object.keys(t).forEach(k=>DF[k]=(DF[k]||0)+1));
+const N=DOCS.length;const idf=k=>Math.log((N+1)/((DF[k]||0)+1))+1;
+function vec(t){const v={};let n=0;for(const k in t){v[k]=t[k]*idf(k);n+=v[k]*v[k];}n=Math.sqrt(n)||1;for(const k in v)v[k]/=n;return v;}
+const DV=TF.map(vec);
+function cos(a,b){let s=0;for(const k in a)if(b[k])s+=a[k]*b[k];return s;}
+
+const $=id=>document.getElementById(id);
+let current='q1';
+
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function markText(text,qtok){const ch=[...text];const m=new Array(ch.length).fill(false);
+ for(let i=0;i+1<ch.length;i++){if(qtok['b:'+ch[i]+ch[i+1]]){m[i]=m[i+1]=true;}}
+ let out='',open=false;ch.forEach((c,i)=>{if(m[i]&&!open){out+='<mark>';open=true}if(!m[i]&&open){out+='</mark>';open=false}out+=esc(c)});if(open)out+='</mark>';return out;}
+
+// classical MDS to 2D
+function mds(vs){const n=vs.length;const D=[];for(let i=0;i<n;i++){D.push([]);for(let j=0;j<n;j++){const d=1-cos(vs[i],vs[j]);D[i].push(d*d);}}
+ const rm=D.map(r=>r.reduce((a,b)=>a+b,0)/n);const gm=rm.reduce((a,b)=>a+b,0)/n;
+ const B=D.map((r,i)=>r.map((v,j)=>-0.5*(v-rm[i]-rm[j]+gm)));
+ const comps=[];let M=B.map(r=>r.slice());
+ for(let c=0;c<2;c++){let v=Array.from({length:n},(_,i)=>Math.sin(i*1.7+c+1));let lam=0;
+  for(let it=0;it<200;it++){const w=M.map(r=>r.reduce((s,x,j)=>s+x*v[j],0));const nn=Math.hypot(...w)||1;lam=nn;v=w.map(x=>x/nn);}
+  const sgn=Math.sign(v.reduce((a,b)=>a+b,0))||1;v=v.map(x=>x*sgn);
+  comps.push(v.map(x=>x*Math.sqrt(Math.max(lam,0))));
+  M=M.map((r,i)=>r.map((x,j)=>x-lam*v[i]*v[j]));}
+ return vs.map((_,i)=>[comps[0][i],comps[1][i]]);}
+
+function run(){
+ const preset=PRESETS.find(p=>p.id===current);
+ const qtext=$('q').value.trim();
+ const k=+$('k').value, th=+$('th').value, rw=$('rw').checked, nb=$('nb').checked, tm=$('tm').checked;
+ $('kv').textContent=k;$('thv').textContent=th.toFixed(2);
+ const qfull=qtext+(rw&&preset?' '+preset.rw:'');
+ const qtok=toks(qfull);const qv=vec(qtok);
+ let scored=DOCS.map((d,i)=>({d,i,s:cos(qv,DV[i])})).sort((a,b)=>b.s-a.s);
+ let hits=scored.filter(h=>h.s>=th).slice(0,k);
+ const ids=new Set(hits.map(h=>h.d.id));
+ let added=[];
+ if(nb){hits.forEach(h=>{[h.i-1,h.i+1].forEach(j=>{const o=DOCS[j];if(o&&o.date===h.d.date&&!ids.has(o.id)){ids.add(o.id);added.push({d:o,i:j,s:scored.find(x=>x.d.id===o.id).s,nb:true});}});});}
+ let all=hits.concat(added);
+ if(tm)all.sort((a,b)=>a.d.date<b.d.date?-1:a.d.date>b.d.date?1:a.i-b.i);
+ // hits list
+ const maxS=Math.max(0.0001,...scored.map(x=>x.s));
+ $('hitcount').textContent=all.length?`· ${all.length} 筆`:'';
+ $('hits').innerHTML=all.length?all.map(h=>`<li class="hit${h.nb?' nb':''}"><span class="id">${h.d.id}</span><div><div class="meta">${h.d.date}　${h.d.who}${h.nb?'　· 鄰近擴充帶入':''}</div><div>${markText(h.d.text,qtok)}</div><div class="bar"><i style="width:${(h.s/maxS*100).toFixed(0)}%"></i></div></div><span class="sc">${h.s.toFixed(3)}</span></li>`).join('')
+  :'<li class="empty">沒有片段超過相似度門檻。模型拿不到任何證據。</li>';
+ // prompt
+ const lines=all.map((h,n)=>`[${n+1}] ${tm?h.d.date+' ':''}${h.d.who}：${h.d.text}`);
+ $('prompt').textContent=`系統：只根據下列記憶回答，並用 [編號] 引用。\n若記憶不足，回答「資料不足」。${tm?'\n記憶已標日期；若互相矛盾，以較新者為準，\n並把「下週」等相對時間換算成日期。':''}\n\n記憶：\n${lines.length?lines.join('\n'):'（無）'}\n\n問題：${qtext||'（空白）'}`;
+ // answer
+ const pos=id=>all.findIndex(h=>h.d.id===id)+1;const has=id=>pos(id)>0;
+ let st='na',label='僅示範檢索',txt='自訂問題只展示檢索與提示組裝。',why='這個頁面沒有連接語言模型，模擬回答只涵蓋四個預設問題。';
+ const isPreset=preset&&qtext===preset.q;
+ if(!qtext){label='尚未輸入';txt='請選一個預設問題或輸入問題。';why='';}
+ else if(isPreset){
+  if(current==='q1'){const old=has('m1'),nw=has('m3')||has('m11');const cites=['m3','m11'].filter(has).map(i=>`[${pos(i)}]`).join('');
+   if(old&&nw&&!tm){st='warn';label='新舊衝突';txt=`可能回答「京都 [${pos('m1')}]」或「大阪 ${cites}」`;why='兩條證據都被交付，但提示裡沒有日期，模型無從判斷哪條較新。試著打開「時間感知」。';}
+   else if(nw){st='ok';label='正確';txt=`住在大阪 ${cites}`+(has('m11')?'，行程延後到五月。':'。');why=old?'較新的 3/5 記憶覆寫了 3/2 的京都計畫。':'檢索到的是更新後的記憶。';}
+   else if(old){st='bad';label='過期證據';txt=`住在京都 [${pos('m1')}]`;why='只檢索到 3/2 的舊計畫，3/5 已改住大阪。試著打開「查詢改寫」，讓「住宿」也能被比對。';}
+   else{st='bad';label='資料不足';txt='資料不足。';why='沒有提到住宿的片段被交付。';}}
+  if(current==='q2'){const old=has('m4'),nw=has('m5');
+   if(old&&nw&&!tm){st='warn';label='新舊衝突';txt=`可能回答「週二和週四 [${pos('m4')}]」或「週三 [${pos('m5')}]」`;why='兩條都在提示裡，且沒有日期。打開「時間感知」讓較新者優先，或把 k 調成 1。';}
+   else if(nw){st='ok';label='正確';txt=`每週三晚上 [${pos('m5')}]`;why=old?'3/10 的更改優先於 3/8 的原始安排。':'只交付了最新的那一條。';}
+   else if(old){st='bad';label='過期證據';txt=`每週二和週四 [${pos('m4')}]`;why='3/10 已改到週三。';}
+   else{st='bad';label='資料不足';txt='資料不足。';why='';}}
+  if(current==='q3'){const a=has('m7'),b=has('m8');
+   if(a&&b&&tm){st='ok';label='正確';txt=`2026-03-16 那週開始 [${pos('m7')}][${pos('m8')}]`;why='3/15（週日）說「下週開始」，換算後是 3/16–3/22 那一週。';}
+   else if(a&&b){st='warn';label='相對時間未換算';txt=`「下週」開始 [${pos('m8')}]`;why='照抄證據裡的「下週」，讀者不知道是哪一週。打開「時間感知」讓系統用對話日期換算。';}
+   else if(b){st='bad';label='缺上下文';txt='資料不足：只知道「是的，下週開始」，不知道主詞。';why='問句在前一則。打開「鄰近擴充」把同一段對話帶進來。';}
+   else if(a){st='bad';label='缺上下文';txt='資料不足：只有助理的問句，沒有小林的回答。';why='答句在下一則。打開「鄰近擴充」，或把 k 調大。';}
+   else{st='bad';label='資料不足';txt='資料不足。';why='';}}
+  if(current==='q4'){if(has('m2')){st='ok';label='正確';txt=`對花生過敏 [${pos('m2')}]`+(has('m9')?`；另外不喝咖啡 [${pos('m9')}]，屬於偏好。`:'。');why='查詢改寫把「禁忌」擴充成「過敏」，才比對得到。';}
+   else{st='bad';label='漏檢';txt='資料不足。';why='「飲食禁忌」和「花生過敏」沒有共同字詞，檢索找不到。打開「查詢改寫」試試。';}}
+ }
+ const A=$('answer');A.className='answer '+st;A.querySelector('.st').textContent=label;A.querySelector('.txt').textContent=txt;A.querySelector('.why').textContent=why;
+ drawPlot(qv,new Set(all.map(h=>h.d.id)));
+ drawEval(scored,k);
+ drawPBar();drawMethods(qfull,k);drawRerank(scored);drawAttr(all,st);
+}
+
+// ---------- SVG helpers ----------
+function TX(x,y,str,cls,anchor){cls=cls||'t';anchor=anchor||'middle';const L=String(str).split('\n');const lh=15;const y0=y-(L.length-1)*lh/2;
+ return L.map((l,i)=>`<text x="${x}" y="${y0+i*lh}" class="${cls}" text-anchor="${anchor}" dominant-baseline="middle">${esc(l)}</text>`).join('');}
+function BX(x,y,w,h,label,cls){return `<g class="bx ${cls||''}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>${TX(x+w/2,y+h/2,label)}</g>`;}
+function AR(x1,y1,x2,y2,cls){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="ar ${cls||''}"/>`;}
+function PA(d,cls){return `<path d="${d}" class="ar ${cls||''}"/>`;}
+function CYL(cx,cy,w,h,label){const rx=w/2,ry=7,t=cy-h/2;
+ return `<path class="cyl" d="M${cx-rx},${t} v${h} a${rx},${ry} 0 0 0 ${w},0 v${-h}"/><ellipse class="cyl" cx="${cx}" cy="${t}" rx="${rx}" ry="${ry}"/>${TX(cx,cy+4,label)}`;}
+function SV(w,h,inner,label){return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">${inner}</svg>`;}
+// equal-width chain of boxes with arrows; returns {svg, xs:[{x,w,cx}]}
+function CHAIN(items,y,h,x0,x1,gap){const n=items.length;const w=(x1-x0-gap*(n-1))/n;let s='';const xs=[];
+ items.forEach((it,i)=>{const x=x0+i*(w+gap);xs.push({x,w,cx:x+w/2});s+=BX(x,y,w,h,it[0],it[1]);if(i<n-1)s+=AR(x+w,y+h/2,x+w+gap,y+h/2);});return {svg:s,xs};}
+
+// ---------- hero overview ----------
+function drawHero(){let s='';
+ s+=BX(10,48,100,54,'使用者問題');
+ s+=AR(110,75,160,75);
+ s+=BX(160,45,130,60,'檢索器\n相似度搜尋','acc');
+ s+=CYL(225,160,140,34,'向量索引');
+ s+=AR(225,136,225,107,'a');
+ s+=TX(305,150,'事先由文件\n切塊、向量化而成','ts','start');
+ ['片段 [1]','片段 [2]','片段 [3]'].forEach((t,i)=>{s+=BX(340,22+i*36,110,28,t,'mk');});
+ s+=AR(290,75,338,75);
+ s+=AR(450,75,500,75);
+ s+=BX(500,45,150,60,'提示\n指令＋片段＋問題');
+ s+=AR(650,75,700,75);
+ s+=BX(700,45,120,60,'語言模型\n只依片段作答','acc');
+ s+=AR(820,75,860,75);
+ s+=BX(860,45,110,60,'回答\n附引用 [1][3]','good');
+ s+=TX(10,14,'R　檢索','tl','start')+TX(500,14,'A　增強','tl','start')+TX(700,14,'G　生成','tl','start');
+ $('fig-hero').innerHTML=SV(980,190,s,'RAG 總覽：問題經檢索器從向量索引取回片段，組成提示後交給語言模型生成附引用的回答');}
+
+// ---------- pipeline ----------
+function drawPipe(){let s='';const W=122,w=104,X=i=>20+i*W;
+ s+=TX(20,16,'離線：建立索引（資料更新時才重跑）','tl','start');
+ const off=[['載入文件\nPDF／網頁／對話',''],['清理\n保留來源與日期',''],['切塊\n數百字、可重疊',''],['向量化\nembedding','']];
+ off.forEach((o,i)=>{s+=BX(X(i),32,w,54,o[0],o[1]);if(i<3)s+=AR(X(i)+w,59,X(i+1),59);});
+ s+=AR(X(3)+w/2,86,X(3)+w/2,128,'a');
+ s+=CYL(X(3)+w/2,152,170,36,'向量索引＋中繼資料');
+ s+=BX(600,128,370,42,'資料更新 → 只需重建或增補索引，不改模型權重','dash');
+ s+=AR(600,149,X(3)+w/2+88,149);
+ s+=TX(20,214,'線上：回答問題（每題一次）','tl','start');
+ const on=[['使用者問題',''],['查詢改寫\n可選','acc dash'],['向量化問題\n同一模型',''],['檢索 top-k\n近鄰搜尋','acc'],['重排序\n可選','acc dash'],['組裝提示\n加編號',''],['LLM 生成\n依片段作答','acc'],['附引用回答','good']];
+ on.forEach((o,i)=>{s+=BX(X(i),232,w,58,o[0],o[1]);if(i<7)s+=AR(X(i)+w,261,X(i+1),261);});
+ s+=AR(X(3)+w/2,176,X(3)+w/2,230,'a');
+ s+=TX(X(3)+w/2+8,203,'取回最相近的 k 個片段','ts','start');
+ $('fig-pipe').innerHTML=SV(1000,305,s,'RAG 流程：離線建立向量索引，線上把問題向量化後檢索、重排、組裝提示並生成回答');}
+
+// ---------- variants ----------
+function drawVariants(){
+ const V=[];
+ // Naive
+ (()=>{const c=CHAIN([['問題',''],['向量檢索','acc'],['塞進提示',''],['LLM','acc'],['回答','good']],45,44,6,354,12);V.push({t:'Naive RAG',d:'一次檢索、直接生成。簡單快速，但漏檢與缺上下文都無從補救。',s:c.svg+TX(180,118,'Lewis et al., 2020','ts'),mem:false});})();
+ // Advanced
+ (()=>{const c=CHAIN([['問題',''],['改寫','acc dash'],['BM25\n＋向量','acc'],['重排序','acc dash'],['LLM','acc']],45,44,6,354,12);V.push({t:'Advanced RAG',d:'檢索前改寫、混合兩種檢索，檢索後再重排序，提高命中率。',s:c.svg+TX(180,118,'前處理＋後處理','ts'),mem:false});})();
+ // Self-RAG
+ (()=>{const c=CHAIN([['問題',''],['要檢索？','acc'],['檢索',''],['自我評估','acc'],['回答','good']],30,44,6,354,12);
+  const a=c.xs[1],b=c.xs[3];let s=c.svg+PA(`M${b.cx},74 C${b.cx},112 ${a.cx},112 ${a.cx},76`,'a d')+TX((a.cx+b.cx)/2,116,'不夠好就重來','ts');
+  V.push({t:'Self-RAG',d:'模型自己判斷何時需要檢索，並評估片段與回答是否有用。',s,mem:false});})();
+ // GraphRAG
+ (()=>{let s='';const P=[[30,30],[70,20],[55,62],[25,95],[85,100],[110,60]];const E=[[0,1],[0,2],[1,2],[2,5],[3,4],[2,3],[4,5]];
+  s+=`<circle class="ring" cx="52" cy="40" r="38"/><circle class="ring" cx="72" cy="90" r="34"/>`;
+  E.forEach(e=>{s+=`<line class="grid" x1="${P[e[0]][0]}" y1="${P[e[0]][1]}" x2="${P[e[1]][0]}" y2="${P[e[1]][1]}"/>`;});
+  P.forEach(p=>{s+=`<circle class="dot on" cx="${p[0]}" cy="${p[1]}" r="6"/>`;});
+  s+=AR(128,62,152,62)+BX(152,40,82,44,'社群摘要','acc')+AR(234,62,252,62)+BX(252,40,46,44,'LLM')+AR(298,62,310,62)+BX(310,40,44,44,'回答','good');
+  s+=TX(70,124,'實體與關係圖','ts');
+  V.push({t:'GraphRAG',d:'先用模型抽出實體與關係建圖，再做社群摘要，擅長全域性問題。',s,mem:false});})();
+ // Agentic
+ (()=>{let s='';s+=BX(6,40,60,44,'問題')+AR(66,62,110,62)+BX(110,34,96,56,'代理\n規劃與判斷','acc');
+  [['搜尋',8],['資料庫',48],['計算',88]].forEach(t=>{s+=BX(270,t[1],84,32,t[0]);s+=PA(`M206,62 L268,${t[1]+16}`,'a');s+=PA(`M270,${t[1]+22} L208,68`,'d');});
+  s+=AR(158,90,158,112)+TX(158,122,'夠了才回答','ts');
+  V.push({t:'Agentic RAG',d:'代理反覆規劃、呼叫多種工具，直到資訊足夠。步數與成本難預測。',s,mem:false});})();
+ // Agent memory
+ (()=>{const c=CHAIN([['對話',''],['寫入','acc'],['記憶庫','acc'],['檢索',''],['回答','good']],18,40,6,354,12);
+  const m=c.xs[2];let s=c.svg+BX(m.x-30,88,m.w+60,32,'更正／撤回／遺忘','bad')+AR(m.cx,88,m.cx,60,'b');
+  V.push({t:'Agent Memory',d:'邊對話邊寫入，記憶要能被更正與撤回，舊版本不能繼續被引用。',s,mem:true});})();
+ $('vgrid').innerHTML=V.map(v=>`<div class="vcard${v.mem?' mem':''}"><h3>${v.t}</h3>${SV(360,130,v.s,v.t+' 結構圖')}<p>${v.d}</p></div>`).join('');}
+
+// ---------- failure minis ----------
+function drawFails(){const F={};
+ F.f1=(()=>{let s=`<circle class="ring" cx="110" cy="62" r="52"/>`;
+  [[85,40],[135,48],[100,90],[140,82]].forEach(p=>{s+=`<circle class="dot on" cx="${p[0]}" cy="${p[1]}" r="5"/>`;});
+  s+=TX(110,66,'★','tl')+TX(110,18,'檢索範圍','ts');
+  s+=`<circle class="dot bad" cx="300" cy="62" r="7"/>`+TX(300,86,'花生過敏','tb');
+  s+=PA('M128,64 L290,62','b d')+TX(220,52,'沒有共同字詞','ts');
+  return SV(360,124,s,'漏檢示意：需要的證據落在檢索範圍外');})();
+ F.f2=(()=>{let s=BX(8,24,160,54,'助理：健身計畫\n什麼時候開始？')+BX(192,24,160,54,'小林：是的，\n下週開始','mk');
+  s+=`<line x1="180" y1="10" x2="180" y2="92" class="ar b d n"/>`+TX(180,104,'切開後只取到右邊 → 不知道主詞','tb');
+  return SV(360,118,s,'缺上下文示意：問句與答句被分成兩個片段');})();
+ F.f3=(()=>{let s=`<line class="grid" x1="20" y1="100" x2="340" y2="100"/>`;
+  s+=BX(20,16,96,36,'京都（舊）')+BX(130,16,96,36,'大阪（新）','good');
+  s+=`<circle class="dot" cx="68" cy="100" r="5"/><circle class="dot on" cx="178" cy="100" r="5"/>`+TX(68,114,'3/2','tm')+TX(178,114,'3/5','tm');
+  s+=AR(68,52,68,94,'n')+AR(178,52,178,94,'n');
+  s+=BX(258,16,90,36,'LLM：？','bad')+PA('M116,40 C190,70 230,60 256,40','b')+AR(226,34,256,34,'b');
+  s+=TX(300,70,'沒有日期\n無從判斷','tb');
+  return SV(360,124,s,'新舊衝突示意：兩條互相矛盾的證據同時交給模型');})();
+ F.f4=(()=>{let s='';const D=['一','二','三','四','五','六','日'];const x0=40,cw=40,ch=22;
+  D.forEach((d,i)=>{s+=TX(x0+i*cw+cw/2,10,d,'ts');});
+  [9,16,23].forEach((st,r)=>{for(let i=0;i<7;i++){const day=st+i;const cls=day===15?'cell today':(r===1?'cell wk':'cell');
+   s+=`<rect class="${cls}" x="${x0+i*cw}" y="${20+r*ch}" width="${cw-3}" height="${ch-3}" rx="3"/>`+`<text x="${x0+i*cw+cw/2-1}" y="${20+r*ch+ch/2}" class="tm" text-anchor="middle" dominant-baseline="middle" style="${day===15?'fill:var(--surface)':''}">3/${day}</text>`;}});
+  s+=TX(x0-6,20+ch/2,'說話日','ts','end')+TX(x0-6,20+ch*1.5,'下週','tb','end');
+  s+=TX(180,104,'3/15（週日）說「下週」＝ 3/16–3/22','ts');
+  return SV(360,114,s,'相對時間示意：以對話日期換算下週的實際日期範圍');})();
+ document.querySelectorAll('[data-fig]').forEach(el=>{el.innerHTML=F[el.dataset.fig]||'';});}
+
+// ---------- vector plot ----------
+function drawPlot(qv,sel){
+ const pts=mds(DV.concat([qv]));
+ const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+ const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+ const W=420,H=260,P=28;const sx=x=>P+(x-minx)/((maxx-minx)||1)*(W-2*P);const sy=y=>P+(y-miny)/((maxy-miny)||1)*(H-2*P);
+ const q=pts[pts.length-1];let s=`<rect class="bg" x="0" y="0" width="${W}" height="${H}" rx="8"/>`;
+ DOCS.forEach((d,i)=>{if(sel.has(d.id))s+=`<line class="ln" style="stroke:var(--mark)" x1="${sx(q[0])}" y1="${sy(q[1])}" x2="${sx(pts[i][0])}" y2="${sy(pts[i][1])}"/>`;});
+ DOCS.forEach((d,i)=>{const on=sel.has(d.id);const x=sx(pts[i][0]),y=sy(pts[i][1]);
+  s+=`<circle class="dot${on?' on':''}" cx="${x}" cy="${y}" r="${on?7:5}"><title>${d.id}：${esc(d.text)}</title></circle>`;
+  s+=`<text x="${x+9}" y="${y+4}" class="tm" style="${on?'fill:var(--ink)':''}">${d.id}</text>`;});
+ s+=`<text x="${sx(q[0])}" y="${sy(q[1])+7}" text-anchor="middle" style="font-size:20px;fill:var(--warn)">★</text>`;
+ $('plot').innerHTML=s;}
+
+// ---------- evaluation ----------
+const REL={q1:['m3','m11'],q2:['m5'],q3:['m7','m8'],q4:['m2']};
+function drawEval(scored,k){
+ const rel=REL[current];
+ const W=520,cw=44,x0=14;let s='';
+ if(!rel||$('q').value.trim()!==(PRESETS.find(p=>p.id===current)||{}).q){
+  $('fig-rank').innerHTML=SV(W,110,TX(W/2,55,'自訂問題沒有標準答案，無法計算。請選一個預設問題。','ts'),'無法評估');
+  $('fig-curve').innerHTML='';$('ev-r').textContent='–';$('ev-m').textContent='–';return;}
+ scored.forEach((h,i)=>{const r=rel.includes(h.d.id);const x=x0+i*cw;
+  s+=`<rect class="cell${r?' rel':''}" x="${x}" y="30" width="${cw-4}" height="40" rx="4"/>`;
+  s+=`<text x="${x+cw/2-2}" y="50" class="tm" text-anchor="middle" dominant-baseline="middle" style="${r?'fill:var(--good);font-weight:600':''}">${h.d.id}</text>`;
+  s+=`<text x="${x+cw/2-2}" y="18" class="ts" text-anchor="middle">${i+1}</text>`;});
+ const kx=x0+k*cw-2;s+=`<line class="kline" x1="${kx}" y1="8" x2="${kx}" y2="92"/>`+TX(kx+4,100,`k = ${k}　← 交付　｜　未交付 →`,'tl','middle');
+ $('fig-rank').innerHTML=SV(W,112,s,'依相似度排名的 11 則記憶與 k 截斷線');
+ const rec=kk=>scored.slice(0,kk).filter(h=>rel.includes(h.d.id)).length/rel.length;
+ const first=scored.findIndex(h=>rel.includes(h.d.id))+1;
+ $('ev-rl').textContent=`Recall@${k}`;$('ev-r').textContent=(rec(k)*100).toFixed(0)+'%';$('ev-m').textContent=first?(1/first).toFixed(2):'0';
+ // curve
+ const CW=360,CH=220,L=40,R=12,T=16,B=36;const X=kk=>L+(kk-1)/10*(CW-L-R);const Y=v=>T+(1-v)*(CH-T-B);let c='';
+ [0,.5,1].forEach(v=>{c+=`<line class="grid" x1="${L}" y1="${Y(v)}" x2="${CW-R}" y2="${Y(v)}"/>`+TX(L-6,Y(v),(v*100)+'%','tm','end');});
+ for(let kk=1;kk<=11;kk++)c+=TX(X(kk),CH-B+14,String(kk),'tm');
+ c+=TX((L+CW-R)/2,CH-6,'k（交付片段數）','ts');
+ const pts=[];for(let kk=1;kk<=11;kk++)pts.push([X(kk),Y(rec(kk))]);
+ c+=`<path class="ln" style="fill:var(--accent-soft);stroke:none;opacity:.6" d="M${X(1)},${Y(0)} L${pts.map(p=>p.join(',')).join(' L')} L${X(11)},${Y(0)} Z"/>`;
+ c+=`<path class="ln" d="M${pts.map(p=>p.join(',')).join(' L')}"/>`;
+ pts.forEach((p,i)=>{c+=`<circle class="dot${i+1===k?' on':''}" cx="${p[0]}" cy="${p[1]}" r="${i+1===k?6:3}"/>`;});
+ c+=TX(pts[k-1][0],pts[k-1][1]-14,(rec(k)*100).toFixed(0)+'%','tl');
+ $('fig-curve').innerHTML=SV(CW,CH,c,'Recall@k 曲線');}
+
+// ---------- chunk strip ----------
+function drawChunkStrip(out,ch){
+ const W=1000,L=40,R=10,top=26,rh=14;const n=out.length;const H=top+n*rh+20;const sx=c=>L+c/ch.length*(W-L-R);let s='';
+ const ends=[];ch.forEach((c,i)=>{if(c==='。')ends.push(i+1);});
+ ends.forEach(e=>{s+=`<line class="sent" x1="${sx(e)}" y1="${top-8}" x2="${sx(e)}" y2="${H-14}"/>`;});
+ s+=TX(L,10,'原文位置 →','ts','start')+TX(W-R,10,ch.length+' 字','tm','end');
+ let cuts=0;
+ out.forEach((c,i)=>{const y=top+i*rh;s+=`<rect class="cr" x="${sx(c.s)}" y="${y}" width="${Math.max(1,sx(c.e)-sx(c.s))}" height="${rh-4}" rx="2"/>`;
+  if(i){const pe=out[i-1].e;if(pe>c.s)s+=`<rect class="ovr" x="${sx(c.s)}" y="${y}" width="${sx(Math.min(pe,c.e))-sx(c.s)}" height="${rh-4}" rx="2"/>`;}
+  s+=TX(L-6,y+(rh-4)/2,'#'+(i+1),'tm','end');
+  if(c.e<ch.length&&!ends.includes(c.e)){cuts++;s+=`<circle class="cut" cx="${sx(c.e)}" cy="${y+(rh-4)/2}" r="3"/>`;}});
+ $('fig-chunk').innerHTML=SV(W,H,s,'切塊條帶圖：每列一個片段在原文中的範圍');
+ return cuts;}
+
+// ================= extra figures (v3) =================
+const DAYN=d=>{const p=d.split('-').map(Number);return Date.UTC(p[0],p[1]-1,p[2])/864e5;};
+const DMIN=Math.min(...DOCS.map(d=>DAYN(d.date))),DMAX=Math.max(...DOCS.map(d=>DAYN(d.date)));
+
+// ---- pipeline step details ----
+const STEPS={
+ off0:{t:'載入文件',w:'把要被查詢的資料收進來：PDF、網頁、筆記、對話紀錄、資料庫欄位。',p:'保留來源網址或檔名、作者、建立與修改日期。',r:'掃描檔需要 OCR；表格、圖片說明容易遺失。'},
+ off1:{t:'清理',w:'去掉頁首頁尾、導覽列、重複段落，統一全半形與換行。',p:'保留可回溯的中繼資料，之後才能附引用、依時間過濾。',r:'清得太兇會刪掉有用的標題與上下文。'},
+ off2:{t:'切塊',w:'把長文切成數百字的片段，每段單獨被檢索。',p:'片段長度、重疊字數、切點（句號、段落、標題）。下方「切塊」一節可以實驗。',r:'切太小缺主詞，切太大稀釋相似度。'},
+ off3:{t:'向量化',w:'用 embedding 模型把每個片段轉成固定長度的向量，語意相近的文字向量也相近。',p:'模型選擇、維度、是否正規化。問題與文件必須用同一個模型。',r:'換模型就要全部重算；領域用語可能需要微調。'},
+ idx:{t:'向量索引',w:'把向量存進支援近似最近鄰搜尋的索引（如 HNSW），並保存原文與中繼資料。',p:'索引類型、建圖參數、是否同時建 BM25 關鍵字索引。',r:'更新與刪除要同步，否則會檢索到已撤回的內容。'},
+ upd:{t:'資料更新',w:'知識變了只需新增、修改或刪除索引中的片段，不必重新訓練語言模型。',p:'增量更新策略、版本號、失效標記。',r:'舊片段沒刪乾淨，新舊內容會同時被取回。'},
+ on0:{t:'使用者問題',w:'自然語言的問題，可能口語、省略或含有代名詞。',p:'對話歷史要不要一起帶入。',r:'「他」「那個」等指代需要先解析。'},
+ on1:{t:'查詢改寫（可選）',w:'用規則或模型把問題改寫、擴充同義詞、拆成子問題，或先生成假設答案再檢索（HyDE）。',p:'改寫提示、產生幾個變體。',r:'多一次模型呼叫；改寫錯了會偏離原意。'},
+ on2:{t:'向量化問題',w:'把問題用同一個 embedding 模型轉成向量。',p:'部分模型對問題與文件使用不同前綴。',r:'模型不一致會讓相似度失去意義。'},
+ on3:{t:'檢索 top-k',w:'在索引中找出與問題向量最相近的 k 個片段，可再與 BM25 結果融合。',p:'k、相似度門檻、中繼資料過濾（日期、來源、使用者）。',r:'k 太小漏檢，k 太大塞進雜訊。'},
+ on4:{t:'重排序（可選）',w:'用較精準但較慢的模型（cross-encoder）或規則（新近度、去重）重新排序候選片段。',p:'候選數量、保留數量、排序特徵。',r:'延遲增加；規則權重需要驗證。'},
+ on5:{t:'組裝提示',w:'把系統指令、編號後的片段與問題組成提示。',p:'片段順序、是否附日期與來源、上下文長度上限。',r:'超過上下文長度會被截斷；放在中間的內容較容易被忽略。'},
+ on6:{t:'LLM 生成',w:'語言模型依提示作答，要求只使用片段內容並標註引用編號。',p:'模型、溫度、輸出格式。',r:'模型仍可能補出片段裡沒有的內容（幻覺）。'},
+ on7:{t:'附引用回答',w:'回答中每個主張都標上片段編號，讀者可以點回原文查核。',p:'引用格式、是否顯示原文摘錄。',r:'引用存在不代表真的支持該句，需要評估引用支持度。'}};
+function showStep(id){const s=STEPS[id];if(!s)return;
+ document.querySelectorAll('#fig-pipe [data-step]').forEach(g=>g.classList.toggle('sel',g.dataset.step===id));
+ $('pipe-detail').innerHTML=`<h3>${s.t}</h3><dl><dt>做什麼</dt><dd>${s.w}</dd><dt>要決定的參數</dt><dd>${s.p}</dd><dt>常見問題</dt><dd>${s.r}</dd></dl>`;}
+
+// ---- prompt composition bar ----
+function drawPBar(){const p=$('prompt').textContent;const i1=p.indexOf('記憶：'),i2=p.indexOf('\n\n問題：');
+ const sys=[...p.slice(0,i1)].length,mem=[...p.slice(i1,i2)].length,q=[...p.slice(i2)].length;const tot=sys+mem+q;const BUD=400;
+ const W=420,L=0,scale=(W-10)/Math.max(BUD,tot);let s='',x=L;
+ [[sys,'var(--muted)','指令'],[mem,'var(--accent)','記憶片段'],[q,'var(--warn)','問題']].forEach(([v,c,n])=>{s+=`<rect x="${x}" y="8" width="${v*scale}" height="22" style="fill:${c};opacity:.85"/>`;x+=v*scale;});
+ s+=`<line class="kline" x1="${BUD*scale}" y1="2" x2="${BUD*scale}" y2="36"/>`+TX(BUD*scale-4,46,'示範上限 400 字','ts','end');
+ s+=TX(0,46,`指令 ${sys}　記憶 ${mem}　問題 ${q}　共 ${tot} 字`,'tm','start');
+ $('fig-pbar').innerHTML=SV(W,54,s,'提示組成長度');}
+
+// ---- embedding: butterfly + gauge ----
+function drawEmbed(){const a=$('ea').value,b=$('eb').value;const ta=toks(a),tb=toks(b);const va=vec(ta),vb=vec(tb);const c=cos(va,vb);
+ $('ecos').textContent=c.toFixed(3);$('ebar').style.width=(c*100).toFixed(1)+'%';
+ const keys=[...new Set(Object.keys(va).concat(Object.keys(vb)))].filter(k=>k.startsWith('b:'));
+ keys.sort((x,y)=>Math.max(va[y]||0,vb[y]||0)*(va[y]&&vb[y]?2:1)-Math.max(va[x]||0,vb[x]||0)*(va[x]&&vb[x]?2:1));
+ const rows=keys.slice(0,14);const W=520,mid=W/2,rh=22,top=30,half=mid-46;let s='';
+ s+=TX(mid-46,12,'← 句子 A 的權重','ts','end')+TX(mid+46,12,'句子 B 的權重 →','ts','start');
+ rows.forEach((k,i)=>{const y=top+i*rh;const wa=(va[k]||0),wb=(vb[k]||0);const sh=wa&&wb;
+  s+=`<rect x="${mid-40-wa*half}" y="${y}" width="${wa*half}" height="${rh-6}" rx="2" style="fill:${sh?'var(--mark)':'var(--accent)'};opacity:${sh?1:.55}"/>`;
+  s+=`<rect x="${mid+40}" y="${y}" width="${wb*half}" height="${rh-6}" rx="2" style="fill:${sh?'var(--mark)':'var(--accent)'};opacity:${sh?1:.55}"/>`;
+  s+=TX(mid,y+(rh-6)/2,k.slice(2),sh?'tl':'t');});
+ if(!rows.length)s+=TX(mid,60,'輸入兩個句子','ts');
+ $('fig-butterfly').innerHTML=SV(W,top+Math.max(rows.length,2)*rh+6,s,'兩個句子的二元組權重比較');}
+
+function drawSparseDense(){const V=Object.keys(DF).length;const n=48,cw=10;let s='';
+ s+=TX(0,10,`稀疏向量（本頁示範）：維度＝詞彙數 ${V}，絕大多數為 0`,'ts','start');
+ const nz=new Set([3,11,12,27,40]);for(let i=0;i<n;i++)s+=`<rect x="${i*cw}" y="18" width="${cw-2}" height="18" rx="2" style="fill:${nz.has(i)?'var(--accent)':'var(--paper)'};stroke:var(--line)"/>`;
+ s+=TX(n*cw+6,27,'…','ts','start');
+ s+=TX(0,58,'密集向量（神經網路 embedding）：常見 384～3072 維，每一維都有值','ts','start');
+ for(let i=0;i<n;i++){const v=(Math.sin(i*2.3)+1)/2;s+=`<rect x="${i*cw}" y="66" width="${cw-2}" height="18" rx="2" style="fill:var(--accent);opacity:${(0.15+0.85*v).toFixed(2)}"/>`;}
+ s+=TX(n*cw+6,75,'…','ts','start');
+ $('fig-sd').innerHTML=SV(520,92,s,'稀疏與密集向量比較示意');}
+
+function drawHeat(){const n=DOCS.length,cs=30,L=40,T=30;let s='';
+ DOCS.forEach((d,i)=>{s+=TX(L+i*cs+cs/2,T-10,d.id,'tm');s+=TX(L-6,T+i*cs+cs/2,d.id,'tm','end');});
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){const v=cos(DV[i],DV[j]);const x=L+j*cs,y=T+i*cs;
+  s+=`<rect x="${x}" y="${y}" width="${cs-2}" height="${cs-2}" rx="3" style="fill:${i===j?'var(--line)':'var(--accent)'};opacity:${i===j?1:(0.06+Math.min(1,v*2.2)).toFixed(2)}"><title>${DOCS[i].id} × ${DOCS[j].id}：${v.toFixed(3)}</title></rect>`;
+  if(i!==j&&v>=0.05)s+=`<text x="${x+cs/2-1}" y="${y+cs/2}" class="tm" text-anchor="middle" dominant-baseline="middle" style="font-size:9px;fill:${v>0.25?'var(--surface)':'var(--ink)'}">${v.toFixed(2).slice(1)}</text>`;}
+ $('fig-heat').innerHTML=SV(L+n*cs+6,T+n*cs+6,s,'11 則記憶兩兩之間的餘弦相似度熱圖');}
+
+// ---- BM25 / RRF bump chart ----
+const BTF=DOCS.map(d=>{const t=toks(d.text),o={};for(const k in t)if(k.startsWith('b:'))o[k]=t[k];return o;});
+const DL=BTF.map(t=>Object.values(t).reduce((a,b)=>a+b,0)),AVG=DL.reduce((a,b)=>a+b,0)/N;
+function bm25(qt){return BTF.map((t,i)=>{let s=0;for(const k in qt){if(!k.startsWith('b:')||!t[k])continue;const df=DF[k]||0;const idfb=Math.log(1+(N-df+0.5)/(df+0.5));s+=idfb*t[k]*2.2/(t[k]+1.2*(1-0.75+0.75*DL[i]/AVG));}return s;});}
+function drawMethods(qfull,k){const qt=toks(qfull),qv=vec(qt);const bm=bm25(qt);const tf=DV.map(v=>cos(qv,v));
+ const rank=arr=>DOCS.map((d,i)=>i).sort((a,b)=>arr[b]-arr[a]||a-b);
+ const rB=rank(bm),rT=rank(tf);const rrf=DOCS.map((d,i)=>1/(60+rB.indexOf(i)+1)+1/(60+rT.indexOf(i)+1));const rR=rank(rrf);
+ const cols=[['BM25 關鍵字',rB,bm],['字元 TF-IDF 餘弦',rT,tf],['RRF 融合',rR,rrf]];
+ const rel=REL[current]||[];const isP=PRESETS.some(p=>p.id===current&&$('q').value.trim()===p.q);
+ const W=640,T=40,rh=24,bw=96,X=[60,272,484];let s='';
+ s+=`<rect x="0" y="${T-4}" width="${W}" height="${k*rh}" style="fill:var(--markbg)"/>`+TX(W-4,T+k*rh-10,`前 ${k} 筆會被交付`,'ts','end');
+ cols.forEach((c,ci)=>{s+=TX(X[ci]+bw/2,16,c[0],'tl');});
+ for(let i=0;i<N;i++){const pts=cols.map((c,ci)=>[X[ci]+bw/2,T+c[1].indexOf(i)*rh+rh/2-2]);const r=isP&&rel.includes(DOCS[i].id);
+  s+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" style="fill:none;stroke:${r?'var(--good)':'var(--line)'};stroke-width:${r?3:1.5}"/>`;}
+ cols.forEach((c,ci)=>{c[1].forEach((di,ri)=>{const y=T+ri*rh;const r=isP&&rel.includes(DOCS[di].id);const zero=c[2][di]<=1e-9;
+  s+=`<g class="bx ${r?'good':''}"><rect x="${X[ci]}" y="${y}" width="${bw}" height="${rh-5}" rx="4" style="${zero?'opacity:.45':''}"/></g>`;
+  s+=`<text x="${X[ci]+8}" y="${y+(rh-5)/2}" class="tm" dominant-baseline="middle" style="fill:var(--ink)">${ri+1}. ${DOCS[di].id}</text>`;
+  s+=`<text x="${X[ci]+bw-6}" y="${y+(rh-5)/2}" class="tm" text-anchor="end" dominant-baseline="middle">${ci===2?(c[2][di]*1000).toFixed(1):c[2][di].toFixed(2)}</text>`;});});
+ $('fig-bump').innerHTML=SV(W,T+N*rh+6,s,'三種檢索方法的排名比較');}
+
+// ---- rerank slope ----
+function drawRerank(scored){const top=scored.filter(h=>h.s>0).slice(0,6);let s='';const W=520,T=36,rh=34,xl=120,xr=400;
+ if(!top.length){$('fig-rerank').innerHTML=SV(W,60,TX(W/2,30,'沒有相似度大於 0 的片段','ts'),'重排序');return;}
+ const rec=h=>(DAYN(h.d.date)-DMIN)/(DMAX-DMIN);const after=top.map(h=>({h,ns:h.s*(1+0.6*rec(h))})).sort((a,b)=>b.ns-a.ns);
+ s+=TX(xl,14,'原始相似度排名','tl')+TX(xr,14,'加入新近度之後','tl');
+ top.forEach((h,i)=>{const j=after.findIndex(a=>a.h===h);const y1=T+i*rh,y2=T+j*rh;const up=j<i,dn=j>i;
+  s+=`<line x1="${xl+56}" y1="${y1}" x2="${xr-56}" y2="${y2}" style="stroke:${up?'var(--good)':dn?'var(--bad)':'var(--muted)'};stroke-width:2"/>`;
+  s+=`<circle class="dot on" cx="${xl+56}" cy="${y1}" r="4"/><circle class="dot ${up?'good':dn?'bad':'on'}" cx="${xr-56}" cy="${y2}" r="4"/>`;
+  s+=TX(xl+48,y1,`${h.d.id}　${h.d.date.slice(5)}　${h.s.toFixed(3)}`,'tm','end');
+  s+=TX(xr-48,y2,`${after[j].ns.toFixed(3)}　${h.d.id}`,'tm','start');});
+ $('fig-rerank').innerHTML=SV(W,T+top.length*rh,s,'重排序前後的名次變化');}
+
+// ---- HNSW schematic ----
+function drawHNSW(){const W=640,layers=[{y:20,n:[[.1,.3],[.5,.75],[.85,.4]],lab:'第 2 層：少數節點、長距離跳躍'},
+ {y:120,n:[[.85,.4],[.7,.55],[.3,.2],[.2,.8],[.5,.35],[.95,.8],[.45,.85]],lab:'第 1 層'},
+ {y:220,n:[[.7,.55],[.76,.62],[.85,.4],[.3,.2],[.2,.8],[.5,.35],[.95,.8],[.45,.85],[.12,.5],[.62,.15],[.35,.6],[.9,.15],[.58,.9],[.05,.15],[.82,.75],[.68,.3]],lab:'第 0 層：全部節點'}];
+ const P=(L,x,y)=>[40+x*380+(1-y)*70,L.y+y*70];let s='',path=[];
+ layers.forEach(L=>{const a=P(L,0,0),b=P(L,1,0),c=P(L,1,1),d=P(L,0,1);
+  s+=`<polygon points="${[a,b,c,d].map(p=>p.join(',')).join(' ')}" style="fill:var(--paper);stroke:var(--line)"/>`;
+  L.n.forEach((p,i)=>{const dd=L.n.map((q,j)=>[j,Math.hypot(q[0]-p[0],q[1]-p[1])]).filter(x=>x[0]!==i).sort((x,y)=>x[1]-y[1]).slice(0,2);
+   dd.forEach(([j])=>{const A=P(L,...p),B=P(L,...L.n[j]);s+=`<line class="grid" x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}"/>`;});});
+  L.n.forEach(p=>{const A=P(L,...p);s+=`<circle class="dot" cx="${A[0]}" cy="${A[1]}" r="4"/>`;});
+  s+=TX(530,L.y+35,L.lab,'ts','start');});
+ const route=[[0,.1,.3],[0,.85,.4],[1,.85,.4],[1,.7,.55],[2,.7,.55],[2,.76,.62]];
+ const pts=route.map(r=>P(layers[r[0]],r[1],r[2]));
+ s+=`<path id="hnsw-path" pathLength="1" d="M${pts.map(p=>p.join(',')).join(' L')}" style="fill:none;stroke:var(--warn);stroke-width:2.5"/>`;
+ pts.forEach((p,i)=>{if(i===0||route[i][0]===route[i-1][0])s+=`<circle class="dot on" cx="${p[0]}" cy="${p[1]}" r="5"/>`;});
+ const Q=P(layers[2],.78,.6);s+=`<text x="${Q[0]}" y="${Q[1]+6}" text-anchor="middle" style="font-size:18px;fill:var(--warn)">★</text>`;
+ s+=TX(pts[0][0],pts[0][1]-12,'入口','tl');
+ $('fig-hnsw').innerHTML=SV(W,300,s,'HNSW 分層圖搜尋示意');}
+function playHNSW(){const p=document.getElementById('hnsw-path');if(!p)return;p.classList.remove('go');void p.getBoundingClientRect();p.classList.add('go');}
+
+// ---- error attribution 2x2 ----
+function drawAttr(all,st){const rel=REL[current];const isP=PRESETS.some(p=>p.id===current&&$('q').value.trim()===p.q);
+ const W=460,H=280,L=60,T=20,cw=190,ch=110;let s='';
+ const Q=[['部分證據已足夠','good',0,0],['成功','good',1,0],['檢索端問題\n漏檢、缺上下文','bad',0,1],['生成端問題\n衝突、未換算','bad',1,1]];
+ Q.forEach(([t,c,cx,cy])=>{s+=`<rect x="${L+cx*cw}" y="${T+cy*ch}" width="${cw-4}" height="${ch-4}" rx="8" style="fill:var(--${c}bg);stroke:var(--line)"/>`+TX(L+cx*cw+cw/2-2,T+cy*ch+24,t,'t');});
+ s+=TX(L+cw-2,H-12,'← 沒取到全部正確證據　｜　取到全部 →','ts')+TX(30,T+ch/2,'答對','ts')+TX(30,T+ch*1.5,'答錯\n或不足','ts');
+ if(isP&&rel){const got=rel.every(id=>all.some(h=>h.d.id===id));const ok=st==='ok';
+  const cx=L+(got?1:0)*cw+cw/2-2,cy=T+(ok?0:1)*ch+ch/2+18;
+  s+=`<circle cx="${cx}" cy="${cy}" r="12" style="fill:var(--accent)"/>`+TX(cx,cy+26,'目前設定','tl');}
+ else s+=TX(L+cw,T+ch,'選一個預設問題','ts');
+ $('fig-attr').innerHTML=SV(W,H,s,'錯誤歸因四象限');}
+
+// ---- clickable pipeline ----
+function drawPipe2(){let s='';const W=122,w=104,X=i=>20+i*W;
+ const G=(id,inner)=>`<g class="step-g" data-step="${id}" tabindex="0" role="button" aria-label="${STEPS[id].t}">${inner}</g>`;
+ s+=TX(20,16,'離線：建立索引（資料更新時才重跑）','tl','start');
+ const off=[['載入文件\nPDF／網頁／對話',''],['清理\n保留來源與日期',''],['切塊\n數百字、可重疊',''],['向量化\nembedding','']];
+ off.forEach((o,i)=>{s+=G('off'+i,BX(X(i),32,w,54,o[0],o[1]));if(i<3)s+=AR(X(i)+w,59,X(i+1),59);});
+ s+=AR(X(3)+w/2,86,X(3)+w/2,128,'a');
+ s+=G('idx',CYL(X(3)+w/2,152,170,36,'向量索引＋中繼資料'));
+ s+=G('upd',BX(600,128,370,42,'資料更新 → 只需重建或增補索引，不改模型權重','dash'));
+ s+=AR(600,149,X(3)+w/2+88,149);
+ s+=TX(20,214,'線上：回答問題（每題一次）','tl','start');
+ const on=[['使用者問題',''],['查詢改寫\n可選','acc dash'],['向量化問題\n同一模型',''],['檢索 top-k\n近鄰搜尋','acc'],['重排序\n可選','acc dash'],['組裝提示\n加編號',''],['LLM 生成\n依片段作答','acc'],['附引用回答','good']];
+ on.forEach((o,i)=>{s+=G('on'+i,BX(X(i),232,w,58,o[0],o[1]));if(i<7)s+=AR(X(i)+w,261,X(i+1),261);});
+ s+=AR(X(3)+w/2,176,X(3)+w/2,230,'a');
+ s+=TX(X(3)+w/2+8,203,'取回最相近的 k 個片段','ts','start');
+ s+=TX(980,300,'點任一步驟看說明','ts','end');
+ $('fig-pipe').innerHTML=SV(1000,310,s,'RAG 流程圖，可點選步驟');
+ $('fig-pipe').addEventListener('click',e=>{const g=e.target.closest('[data-step]');if(g)showStep(g.dataset.step);});
+ $('fig-pipe').addEventListener('keydown',e=>{const g=e.target.closest('[data-step]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showStep(g.dataset.step);}});
+ showStep('on3');}
+
+// ================= Agent Memory section =================
+const MEV=[
+ {d:'03-02',t:'下個月要去京都旅行，預計住四晚。',ops:[['ADD','旅行・住宿','京都']]},
+ {d:'03-02',t:'提醒一下，我對花生過敏。',ops:[['ADD','飲食・過敏','花生']]},
+ {d:'03-05',t:'住宿改到大阪了，朋友住那裡。',ops:[['UPDATE','旅行・住宿','大阪']]},
+ {d:'03-08',t:'開始學日文，每週二和週四上課。',ops:[['ADD','日文課・時間','週二、週四']]},
+ {d:'03-10',t:'日文課改到每週三晚上了。',ops:[['UPDATE','日文課・時間','週三晚上']]},
+ {d:'03-12',t:'柴犬麻糬旅行時託給姊姊照顧。',ops:[['ADD','寵物','柴犬麻糬'],['ADD','旅行・寵物照顧','姊姊']]},
+ {d:'03-15',t:'（回答助理）是的，下週開始健身。',ops:[['ADD','健身・開始','3/16 那週']]},
+ {d:'03-20',t:'喜歡抹茶甜點，但是不喝咖啡。',ops:[['ADD','偏好・甜點','抹茶'],['ADD','偏好・咖啡','不喝']]},
+ {d:'03-22',t:'這趟旅行預算大約五萬元。',ops:[['ADD','旅行・預算','五萬元']]},
+ {d:'03-25',t:'大阪的行程延後到五月出發。',ops:[['NOOP','旅行・住宿','大阪'],['ADD','旅行・出發','五月']]},
+ {d:'03-28',t:'健身計畫先取消了，太忙。',ops:[['RETRACT','健身・開始','']]},
+ {d:'04-02',t:'其實低咖啡因的我可以喝。',ops:[['UPDATE','偏好・咖啡','只喝低咖啡因']]}];
+const MKEYS=['旅行・住宿','旅行・出發','旅行・預算','旅行・寵物照顧','寵物','飲食・過敏','偏好・甜點','偏好・咖啡','日文課・時間','健身・開始'];
+const OPN={ADD:'新增',UPDATE:'更新',RETRACT:'撤回',NOOP:'不變（再次確認）'};
+let mstep=1,mtimer=null;
+function mstate(s){const V={};MKEYS.forEach(k=>V[k]=[]);let ops=0;
+ for(let i=0;i<s;i++)MEV[i].ops.forEach(([op,k,v])=>{const L=V[k];const open=L.length&&L[L.length-1].end==null?L[L.length-1]:null;
+  if(op==='ADD'||op==='UPDATE'){if(open){open.end=i;open.et='sup';}L.push({v,start:i,end:null,et:null,conf:[]});ops++;}
+  else if(op==='NOOP'){if(open)open.conf.push(i);}
+  else if(op==='RETRACT'){if(open){open.end=i;open.et='ret';}ops++;}});
+ return V;}
+function mactive(V,k){const L=V[k];const o=L.length?L[L.length-1]:null;return o&&o.end==null?o:null;}
+
+function drawMemLife(){let s='';const y=70,h=56;
+ s+=BX(20,y,110,h,'對話輪次\n使用者發言')+AR(130,y+h/2,160,y+h/2)+BX(160,y,110,h,'抽取\n候選事實','acc')+AR(270,y+h/2,300,y+h/2)+BX(300,y,110,h,'比對\n既有記憶','acc')+AR(410,y+h/2,440,y+h/2);
+ const ops=[['新增','good'],['更新','acc'],['撤回','bad'],['不變','']];
+ ops.forEach((o,i)=>{s+=BX(440,10+i*40,120,32,o[0],o[1]);s+=AR(560,26+i*40,618,y+h/2,'');});
+ s+=TX(500,178,'決策：四種操作','ts');
+ s+=BX(620,y,120,h,'寫入記憶庫\n保留版本')+AR(740,y+h/2,770,y+h/2)+BX(770,y,90,h,'檢索','acc')+AR(860,y+h/2,880,y+h/2)+BX(880,y,100,h,'回答\n附引用','good');
+ s+=PA(`M930,${y+h} L930,215 L75,215 L75,${y+h+2}`,'a d')+TX(500,207,'下一輪對話又可能更正或撤回先前的記憶','ts');
+ s+=BX(620,150,120,34,'定期壓縮／遺忘','dash')+AR(680,150,680,y+h+2);
+ $('fig-memlife').innerHTML=SV(1000,230,s,'代理記憶的寫入與讀取循環');}
+
+function drawMemTypes(){let s='';const W=640;
+ const C=[[10,10,'工作記憶','目前對話與上下文視窗\n例：這一輪的提問','acc'],[330,10,'情節記憶','帶時間的事件\n例：3/15 說下週開始健身',''],
+  [10,140,'程序記憶','做事方式與規則\n例：推薦餐廳前先查過敏',''],[330,140,'語意記憶','抽象出的穩定事實\n例：小林對花生過敏','good']];
+ C.forEach(c=>{s+=`<g class="bx ${c[4]}"><rect x="${c[0]}" y="${c[1]}" width="300" height="110" rx="8"/></g>`+TX(c[0]+16,c[1]+24,c[2],'tl','start')+TX(c[0]+16,c[1]+68,c[3],'t','start');});
+ s+=AR(480,121,480,138,'a')+TX(490,130,'整合歸納','ts','start');
+ s+=AR(310,65,328,65,'a');s+=AR(328,195,312,195,'a')+TX(320,226,'從經驗形成規則','ts');
+ $('fig-memtypes').innerHTML=SV(W,240,s,'四種記憶類型');}
+
+function drawSwim(){const V=mstate(mstep);const n=MEV.length,W=940,L=120,T=34,rh=28,cw=(W-L-10)/n;let s='';
+ s+=`<rect x="${L+(mstep-1)*cw}" y="0" width="${cw}" height="${T+MKEYS.length*rh}" style="fill:var(--markbg)"/>`;
+ MEV.forEach((e,i)=>{s+=TX(L+i*cw+cw/2,12,e.d.replace('-','/'),'tm');s+=TX(L+i*cw+cw/2,26,'#'+(i+1),'ts');});
+ MKEYS.forEach((k,r)=>{const y=T+r*rh;s+=`<line class="grid" x1="${L}" y1="${y+rh-2}" x2="${W-10}" y2="${y+rh-2}"/>`+TX(L-8,y+rh/2-2,k,'t','end');
+  V[k].forEach(v=>{const x1=L+v.start*cw+2,x2=L+(v.end==null?mstep:v.end)*cw-2;const cls=v.end==null?'acc':v.et==='ret'?'bad':'';
+   s+=`<g class="bx ${cls}"><rect x="${x1}" y="${y+3}" width="${Math.max(6,x2-x1)}" height="${rh-10}" rx="4" style="${v.et==='sup'?'opacity:.55':''}"/></g>`;
+   s+=`<text x="${x1+6}" y="${y+rh/2-2}" class="ts" dominant-baseline="middle" style="fill:var(--ink)">${esc(v.v)}${v.et==='sup'?'（已被取代）':v.et==='ret'?'（已撤回）':''}</text>`;
+   v.conf.filter(c=>c<mstep).forEach(c=>{s+=`<circle class="dot good" cx="${L+c*cw+cw/2}" cy="${y+rh/2-2}" r="4"><title>再次確認</title></circle>`;});
+   if(v.et==='ret')s+=TX(x2+8,y+rh/2-2,'✕','tb');});});
+ $('fig-swim').innerHTML=SV(W,T+MKEYS.length*rh+4,s,'記憶版本泳道圖');}
+
+function drawGrowth(){const n=MEV.length,W=420,H=220,L=36,R=10,T=14,B=34;const X=i=>L+(i-1)/(n-1)*(W-L-R);
+ const raw=[],ver=[],act=[];for(let i=1;i<=n;i++){const V=mstate(i);raw.push(i);let vv=0,aa=0;MKEYS.forEach(k=>{vv+=V[k].length;if(mactive(V,k))aa++;});ver.push(vv);act.push(aa);}
+ const mx=Math.max(...raw,...ver);const Y=v=>T+(1-v/mx)*(H-T-B);let s='';
+ [0,4,8,12].filter(v=>v<=mx).forEach(v=>{s+=`<line class="grid" x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}"/>`+TX(L-6,Y(v),String(v),'tm','end');});
+ for(let i=1;i<=n;i+=1)if(i%2===1||i===n)s+=TX(X(i),H-B+14,'#'+i,'tm');
+ const line=(a,c,dash)=>`<path d="M${a.map((v,i)=>X(i+1)+','+Y(v)).join(' L')}" style="fill:none;stroke:${c};stroke-width:2.2;${dash?'stroke-dasharray:5 4':''}"/>`;
+ s+=line(raw,'var(--muted)',true)+line(ver,'var(--warn)')+line(act,'var(--accent)');
+ s+=`<line class="kline" x1="${X(mstep)}" y1="${T}" x2="${X(mstep)}" y2="${H-B}"/>`;
+ [[raw,'var(--muted)'],[ver,'var(--warn)'],[act,'var(--accent)']].forEach(([a,c])=>{s+=`<circle cx="${X(mstep)}" cy="${Y(a[mstep-1])}" r="5" style="fill:${c}"/>`;});
+ s+=`<text x="${L}" y="${H-4}" class="ts">— 原始訊息 ${raw[mstep-1]}　</text>`;
+ s+=TX(L+130,H-4,`版本總數 ${ver[mstep-1]}`,'ts','start')+TX(L+230,H-4,`目前有效 ${act[mstep-1]}`,'tl','start');
+ $('fig-growth').innerHTML=SV(W,H,s,'記憶數量隨對話成長');}
+
+function memAsOf(){const V=mstate(mstep);const Q=[['小林旅行住哪裡？','旅行・住宿'],['日文課是星期幾？','日文課・時間'],['健身什麼時候開始？','健身・開始'],['可以請小林喝咖啡嗎？','偏好・咖啡']];
+ $('asof').innerHTML=Q.map(([q,k])=>{const L=V[k];const a=mactive(V,k);const last=L[L.length-1];let ans,cls,src;
+  if(a){ans=a.v;cls='ok';src=`來源 #${a.start+1}（${MEV[a.start].d.replace('-','/')}）`+(L.length>1?`，取代了 ${L.length-1} 個舊版本`:'');}
+  else if(last&&last.et==='ret'){ans='已取消';cls='warn';src=`#${last.end+1} 撤回了「${last.v}」`;}
+  else{ans='還沒有這項記憶';cls='na';src='到目前這一輪尚未提到';}
+  return `<div class="answer ${cls}"><span class="st">${q}</span><span class="txt">${esc(ans)}</span><span class="why">${src}</span></div>`;}).join('');}
+
+function memPolicy(){const V=mstate(mstep);const keys=['旅行・住宿','健身・開始','偏好・咖啡'];
+ const raw=k=>MEV.slice(0,mstep).map((e,i)=>({e,i})).filter(x=>x.e.ops.some(o=>o[1]===k));
+ const col=(title,desc,body)=>`<div class="pcol"><h3>${title}</h3><p class="note">${desc}</p>${body}</div>`;
+ const keyBlock=(k,inner)=>`<div class="pkey"><span class="label">${k}</span>${inner||'<span class="ver none">（尚無）</span>'}</div>`;
+ const a=keys.map(k=>keyBlock(k,raw(k).map(x=>`<span class="ver raw">#${x.i+1} ${esc(x.e.t)}</span>`).join(''))).join('');
+ const b=keys.map(k=>{const o=mactive(V,k);const L=V[k];return keyBlock(k,o?`<span class="ver cur">${esc(o.v)}</span>`:(L.length?'<span class="ver gone">（已刪除，沒有留下紀錄）</span>':''));}).join('');
+ const c=keys.map(k=>keyBlock(k,V[k].map(v=>`<span class="ver ${v.end==null?'cur':v.et==='ret'?'ret':'old'}">v${V[k].indexOf(v)+1} ${esc(v.v)}<small>#${v.start+1}${v.end!=null?(v.et==='ret'?' → #'+(v.end+1)+' 撤回':' → #'+(v.end+1)+' 取代'):' 起有效'}</small></span>`).join('<span class="arrow">→</span>'))).join('');
+ $('policy').innerHTML=col('只追加','原文全部留著。讀取時新舊並存，要靠模型自己判斷。',a)+col('直接覆寫','只留最新值。簡單，但看不到改過什麼，撤回後完全消失。',b)+col('版本化','每次變更產生新版本並連到舊版本，能回答「當時是什麼」也能追溯。',c);}
+
+function memRender(){$('ms').value=mstep;$('msv').textContent=`第 ${mstep} / ${MEV.length} 輪`;const e=MEV[mstep-1];
+ $('mev').innerHTML=`<div class="meta">${e.d.replace('-','/')}　小林</div><p class="evtext">「${esc(e.t)}」</p><div class="ops">${e.ops.map(o=>`<span class="op ${o[0]}">${OPN[o[0]]}</span><span class="opk">${o[1]}${o[2]?'＝'+esc(o[2]):''}</span>`).join('')}</div>`;
+ drawSwim();drawGrowth();memAsOf();memPolicy();}
+function memStep(d){mstep=Math.min(MEV.length,Math.max(1,mstep+d));memRender();}
+function memPlay(){if(mtimer){clearInterval(mtimer);mtimer=null;$('mplay').textContent='自動播放';return;}
+ if(mstep>=MEV.length)mstep=0;$('mplay').textContent='暫停';mtimer=setInterval(()=>{if(mstep>=MEV.length){clearInterval(mtimer);mtimer=null;$('mplay').textContent='自動播放';return;}memStep(1);},1300);}
+
+// ---- support graph ----
+const SUPE={m3:true,m11:true,m6:true,m10:true};
+function drawSupport(){const e=SUPE;const C1=e.m3||e.m11,C2=e.m11,C3=e.m6&&C2,C4=e.m10;
+ const EV=[['m3','m3：住宿改到大阪',40],['m11','m11：大阪行程延後到五月',100],['m6','m6：麻糬託給姊姊',170],['m10','m10：預算五萬元',240]];
+ const W=760,ew=190,eh=36;let s='';
+ const edge=(x1,y1,x2,y2,on)=>`<path d="M${x1},${y1} C${(x1+x2)/2},${y1} ${(x1+x2)/2},${y2} ${x2},${y2}" style="fill:none;stroke:${on?'var(--accent)':'var(--bad)'};stroke-width:2;${on?'':'stroke-dasharray:5 4'}"/>`;
+ const gate=(x,y,lab,on)=>`<circle cx="${x}" cy="${y}" r="15" style="fill:var(--surface);stroke:${on?'var(--accent)':'var(--bad)'};stroke-width:2"/>`+TX(x,y,lab,'tl');
+ const claim=(x,y,lab,on)=>BX(x,y-eh/2,190,eh,lab,on?'good':'bad')+TX(x+196,y,on?'有效':'失效',on?'ts':'tb','start');
+ // edges
+ s+=edge(20+ew,40,280,70,e.m3)+edge(20+ew,100,280,70,e.m11)+edge(295,70,340,70,C1);
+ s+=edge(20+ew,100,340,130,e.m11);
+ s+=edge(566,130,585,195,C2)+edge(20+ew,170,585,195,e.m6);
+ s+=edge(20+ew,240,340,250,e.m10);
+ s+=gate(280,70,'或',C1)+gate(600,195,'且',C3);
+ EV.forEach(([id,lab,y])=>{s+=`<g class="step-g" data-ev="${id}" tabindex="0" role="button" aria-pressed="${!e[id]}" aria-label="切換 ${id}">${BX(20,y-eh/2,ew,eh,lab+(e[id]?'':'（已撤回）'),e[id]?'mk':'bad dash')}</g>`;});
+ s+=claim(340,70,'C1 小林住在大阪',C1)+claim(340,130,'C2 五月出發',C2)+claim(340,250,'C4 旅行預算五萬',C4);
+ s+=BX(520,280-0,190,eh,'C3 五月時麻糬由姊姊照顧',C3?'good':'bad');s+=edge(600,210,615,280,C3);
+ s+=TX(715,298,C3?'有效':'失效',C3?'ts':'tb','start');
+ s+=TX(20,12,'證據（點擊切換撤回）','tl','start')+TX(340,12,'推導出的記憶','tl','start');
+ $('fig-support').innerHTML=SV(W,320,s,'記憶與證據的支持關係圖');
+ const why=[];
+ why.push(C1?(e.m3&&e.m11?'C1 有兩組獨立支持（m3 或 m11），撤回其中一個仍然有效。':`C1 只剩 ${e.m3?'m3':'m11'} 支持，仍然有效。`):'C1 的兩組支持都被撤回，失效。');
+ why.push(C3?'C3 需要 m6 且 C2 同時成立，目前都成立。':`C3 需要 m6 且 C2 同時成立；${!e.m6?'m6 已撤回':'C2 已失效'}，所以失效。`);
+ if(!e.m11)why.push('撤回 m11 會讓 C2 失效，並連帶讓依賴它的 C3 失效，C1 則靠 m3 保住。');
+ $('sup-why').innerHTML=why.map(w=>`<li>${w}</li>`).join('');}
+
+function drawReval(){let s='';const y=60,h=56;
+ s+=BX(10,y,150,h,'已產生的回答\n證據集合 E','good')+AR(160,y+h/2,190,y+h/2)+BX(190,y,150,h,'記憶有新寫入\n（更新／撤回）','bad')+AR(340,y+h/2,370,y+h/2);
+ s+=BX(370,y,170,h,'在新快照上重新檢索\n得到 E′','acc')+AR(540,y+h/2,575,y+h/2);
+ s+=`<polygon points="635,${y-4} 695,${y+h/2} 635,${y+h+4} 575,${y+h/2}" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5"/>`+TX(635,y+h/2,"E′＝E？");
+ s+=AR(695,y+h/2,740,y+h/2)+TX(717,y+h/2-10,'是','ts')+BX(740,y,200,h,'保留原回答\n不必重新生成','good');
+ s+=PA(`M635,${y+h+4} L635,165 L740,165`,'')+TX(645,150,'否','ts','start')+BX(740,140,200,50,'重新生成回答\n（舊證據已失效）','bad');
+ s+=TX(10,170,'只檢查原證據還在不在不夠：','ts','start')+TX(10,188,'新寫入可能讓別的片段排到前面，原回答已不是最新依據。','ts','start');
+ $('fig-reval').innerHTML=SV(950,200,s,'回答後重新驗證流程');}
+
+// presets
+$('presets').innerHTML=PRESETS.map(p=>`<button class="chip" data-id="${p.id}" aria-pressed="${p.id===current}">${p.q}</button>`).join('');
+function choose(id){current=id;const p=PRESETS.find(x=>x.id===id);$('q').value=p?p.q:$('q').value;
+ document.querySelectorAll('#presets .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===id));run();}
+$('presets').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b)choose(b.dataset.id);});
+$('q').addEventListener('input',()=>{const p=PRESETS.find(x=>x.q===$('q').value.trim());current=p?p.id:'custom';
+ document.querySelectorAll('#presets .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===current));run();});
+['k','th','rw','nb','tm'].forEach(id=>$(id).addEventListener('input',run));
+
+// failure "try" buttons
+const SETUPS={q4:{q:'q4',k:3,rw:false,nb:false,tm:false},q3:{q:'q3',k:1,rw:false,nb:false,tm:false},q1:{q:'q1',k:3,rw:false,nb:false,tm:false},q3b:{q:'q3',k:3,rw:false,nb:false,tm:false}};
+document.querySelectorAll('.try').forEach(b=>b.addEventListener('click',()=>{const s=SETUPS[b.dataset.try];
+ $('k').value=s.k;$('th').value=0.03;$('rw').checked=s.rw;$('nb').checked=s.nb;$('tm').checked=s.tm;
+ choose(s.q);
+ $('demo').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
+
+// chunking
+const SAMPLE='檢索增強生成把語言模型和外部知識庫接在一起。系統先把文件切成片段，用嵌入模型轉成向量，存進向量資料庫。使用者提問時，問題也被轉成向量，系統找出最相近的幾個片段，連同問題一起放進提示。模型只根據這些片段回答，並標註引用來源。這樣做的好處是知識可以隨時更新，不必重新訓練模型；回答也能被追溯與查核。缺點是檢索一旦漏掉關鍵片段，模型就無從回答；片段若缺少上下文，模型可能補錯主詞；新舊資料並存時，還可能引用過期的內容。';
+function chunk(){let size=+$('cs').value,ov=+$('co').value;if(ov>=size)ov=size-5;$('csv').textContent=size;$('cov').textContent=ov;
+ const ch=[...SAMPLE];const out=[];let start=0;
+ while(start<ch.length){const end=Math.min(start+size,ch.length);out.push({s:start,e:end});if(end>=ch.length)break;start=end-ov;}
+ const total=out.reduce((a,c)=>a+c.e-c.s,0);
+ $('cn').textContent=out.length;$('ct').textContent=total;$('cr').textContent=((total-ch.length)/ch.length*100).toFixed(0)+'%';$('cc').textContent=drawChunkStrip(out,ch);
+ $('chunks').innerHTML=out.map((c,i)=>{const prevEnd=i?out[i-1].e:c.s;const ovEnd=Math.min(prevEnd,c.e);
+  return `<div class="chunk"><span class="ci">#${i+1}</span><span>${i&&ovEnd>c.s?`<span class="ov">${esc(ch.slice(c.s,ovEnd).join(''))}</span>`:''}${esc(ch.slice(i?Math.max(ovEnd,c.s):c.s,c.e).join(''))}</span></div>`;}).join('');}
+['cs','co'].forEach(id=>$(id).addEventListener('input',chunk));
+
+const TRADE=[['片段長度 ↑','up','dn','up','fl','256–1024 tokens'],['重疊 ↑','up','fl','up','fl','片段長度的 10–20%'],['k ↑','up','dn','up','up','3–10'],['相似度門檻 ↑','dn','up','dn','fl','依模型分數分布調整'],['查詢改寫','up','cu','up','up','1–3 個改寫'],['混合檢索（BM25＋向量）','up','up','fl','up','RRF，常數 60'],['重排序','fl','up','up','up','取 20–50 候選再留前 k'],['鄰近擴充','up','dn','up','fl','前後各 1 段']];
+const EF={up:['▲','提高'],dn:['▼','降低'],fl:['–','影響小'],cu:['±','視情況']};
+$('trade').innerHTML=TRADE.map(r=>'<tr><td>'+r[0]+'</td>'+r.slice(1,5).map(v=>'<td><span class="ef '+v+'" title="'+EF[v][1]+'">'+EF[v][0]+'</span></td>').join('')+'<td>'+r[5]+'</td></tr>').join('');
+const GL=[['Embedding','把文字轉成固定長度向量的模型或其輸出，語意相近的文字向量相近。'],['向量資料庫','儲存向量並支援近似最近鄰搜尋的系統，通常也存原文與中繼資料。'],['ANN／HNSW','近似最近鄰搜尋。HNSW 用分層圖，犧牲極少準確度換取大幅加速。'],['BM25','經典關鍵字排序公式，考慮詞頻、逆文件頻率與文件長度。'],['RRF','倒數排名融合，把多份排名依 1/(常數＋名次) 加總合併。'],['Cross-encoder','把問題與片段一起輸入模型打分的重排序器，比向量比對準但慢。'],['Chunk','切塊後的片段，是檢索與引用的基本單位。'],['Top-k','檢索後交付給模型的片段數量。'],['Context window','模型一次能讀入的最大長度，提示超過會被截斷。'],['HyDE','先讓模型寫一段假設答案，再用它去檢索的查詢改寫技巧。'],['Faithfulness','忠實度：回答內容是否都能在交付的片段中找到依據。'],['Hallucination','幻覺：模型產生片段中沒有、甚至錯誤的內容。']];
+$('gloss').innerHTML=GL.map(g=>'<div class="term"><b>'+g[0]+'</b><p>'+g[1]+'</p></div>').join('');
+['ea','eb'].forEach(id=>$(id).addEventListener('input',drawEmbed));
+$('hnsw-play').addEventListener('click',playHNSW);
+drawSparseDense();drawEmbed();drawHeat();drawHNSW();
+drawHero();drawPipe2();
+(function heroArt(){const p=PRESETS[0];const qv=vec(toks(p.q+' '+p.rw));const pts=mds(DV.concat([qv]));
+ const xs=pts.map(a=>a[0]),ys=pts.map(a=>a[1]);const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
+ const W=480,H=360,P=46;const X=x=>P+(x-mnx)/((mxx-mnx)||1)*(W-2*P),Y=y=>P+(y-mny)/((mxy-mny)||1)*(H-2*P-20);
+ const sc=DV.map((v,i)=>[i,cos(qv,v)]).sort((a,b)=>b[1]-a[1]);const top=new Set(sc.slice(0,3).map(a=>a[0]));const q=pts[pts.length-1];let s='';
+ [46,92,138].forEach(r=>{s+='<circle cx="'+X(q[0])+'" cy="'+Y(q[1])+'" r="'+r+'" style="fill:none;stroke:var(--band-line);stroke-dasharray:3 5"/>';});
+ DOCS.forEach((d,i)=>{if(top.has(i))s+='<line x1="'+X(q[0])+'" y1="'+Y(q[1])+'" x2="'+X(pts[i][0])+'" y2="'+Y(pts[i][1])+'" style="stroke:var(--mark);stroke-width:1.6;opacity:.85"/>';});
+ DOCS.forEach((d,i)=>{const x=X(pts[i][0]),y=Y(pts[i][1]),on=top.has(i);
+  s+='<circle cx="'+x+'" cy="'+y+'" r="'+(on?14:9)+'" style="fill:'+(on?'var(--mark)':'var(--band-muted)')+';opacity:.18"/>';
+  s+='<circle cx="'+x+'" cy="'+y+'" r="'+(on?6:4)+'" style="fill:'+(on?'var(--mark)':'var(--band-muted)')+'"/>';
+  s+='<text x="'+(x+12)+'" y="'+(y+4)+'" style="font-family:var(--f-body);font-size:'+(on?13:11)+'px;fill:'+(on?'var(--band-fg)':'var(--band-muted)')+'">'+(on?esc(d.text.slice(0,9))+'…':d.id)+'</text>';});
+ s+='<text x="'+X(q[0])+'" y="'+(Y(q[1])+9)+'" text-anchor="middle" style="font-size:26px;fill:var(--mark)">★</text>';
+ s+='<text x="'+(W/2)+'" y="'+(H-10)+'" text-anchor="middle" style="font-family:var(--f-body);font-size:13px;fill:var(--band-muted)">問：'+esc(p.q)+'　最近的三則記憶被取回</text>';
+ $('hero-art').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="記憶在向量空間中的分布，問題取回最近的三則">'+s+'</svg>';})();
+try{const links=[...document.querySelectorAll('.toc a')];const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id));});},{rootMargin:'-40% 0px -55% 0px'});
+ document.querySelectorAll('.wrap>section[id]').forEach(el=>io.observe(el));}catch(e){}
+drawMemLife();drawMemTypes();drawSupport();drawReval();memRender();
+$('mprev').addEventListener('click',()=>memStep(-1));$('mnext').addEventListener('click',()=>memStep(1));
+$('ms').addEventListener('input',()=>{mstep=+$('ms').value;memRender();});$('mplay').addEventListener('click',memPlay);
+$('fig-support').addEventListener('click',e=>{const g=e.target.closest('[data-ev]');if(g){SUPE[g.dataset.ev]=!SUPE[g.dataset.ev];drawSupport();}});
+$('fig-support').addEventListener('keydown',e=>{const g=e.target.closest('[data-ev]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();SUPE[g.dataset.ev]=!SUPE[g.dataset.ev];drawSupport();}});
+$('sup-reset').addEventListener('click',()=>{Object.keys(SUPE).forEach(k=>SUPE[k]=true);drawSupport();});drawVariants();drawFails();
+choose('q1');chunk();
+})();
+</script>
+</body>
+</html>
